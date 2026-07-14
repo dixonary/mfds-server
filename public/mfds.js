@@ -183,7 +183,7 @@ const doTranslation = () => {
             let p = "";
             if (i > 0) {
               const prev = dict[str[i - 1]];
-              if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0) {
+              if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0 || !prev) {
                 p = `<span class="spacer"> </span>`;
               }
             }
@@ -191,14 +191,16 @@ const doTranslation = () => {
             return `${p}${s}`;
           }
           else {
-            return `<span class="signal undef">@${x}_UNDEF</span>`;
+            // UNDEF is always rendered with a space
+            p = `<span class="spacer"> </span>`;
+            return `${p}<span class="signal undef">@${x}_UNDEF</span>`;
           }
         }
         else {
           const prev = dict[str[i - 1]];
           console.log(x, prev?.desc)
           let p = "";
-          if (prev?.desc.formatModeAfter > 0) {
+          if (prev?.desc.formatModeAfter > 0 || !prev) {
             p = `<span class="spacer"> </span>`;
           }
           return `${p}<span class="signal number">${x}</span>`;
