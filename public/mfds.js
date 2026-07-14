@@ -170,7 +170,7 @@ const doTranslation = () => {
 
     const str = JSON.parse(original);
 
-    const newText = str
+    let newText = str
       .map((x, i) => {
         if (x < 0) {
           entry = dict[x];
@@ -201,15 +201,21 @@ const doTranslation = () => {
       })
       .join("");
 
+    // newText = decodeEntities(newText);
     console.log(newText);
+
+    el.innerHTML = newText;
+    const rawText = el.textContent;
+
     new Typewriter(el, {
       delay: 1,
-      loop: false
+      loop: false,
     })
-      .typeString(newText)
+      .typeString(rawText)
       .callFunction(({ elements: { cursor, wrapper } }) => {
         cursor.remove();
         wrapper.replaceWith(...wrapper.childNodes);
+        el.innerHTML = newText;
       })
       .start();
 
