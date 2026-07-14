@@ -236,6 +236,9 @@ const renderMessage = (sender, message) => {
   el.appendChild(bel);
   $("#all-messages").appendChild(el);
 
+  // Scroll to bottom
+  $(".view").scrollTop = $(".view").scrollHeight;
+
 }
 
 const renderErrorMessage = (message) => {
@@ -252,6 +255,10 @@ const renderErrorMessage = (message) => {
   el.appendChild(ael);
   el.appendChild(bel);
   $("#all-messages").appendChild(el);
+
+  // Scroll to bottom
+  $(".view").scrollTop = $(".view").scrollHeight;
+
 }
 
 //**************************************************//
