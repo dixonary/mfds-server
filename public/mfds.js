@@ -148,7 +148,7 @@ const loadDictionary = (text) => {
         value: data.wordDict.values[i]
       };
     });
-    descs = Object.fromEntries(data.descDict.keys.map((x, i) =>
+    let descs = Object.fromEntries(data.descDict.keys.map((x, i) =>
       [x, data.descDict.values[i]]
     ));
     dictOrd = dictOrd.map(x => ({ ...x, desc: descs[x.key] }));
@@ -550,8 +550,8 @@ const parseText = (text) => {
   // Must be no invalid signals
   if (invalid.length === 0) {
     // Max length 
-    const maxSignals = 50;
-    if (signals.length <= 50) {
+    const maxSignals = 500;
+    if (signals.length <= 500) {
       return signals;
     }
     else {
