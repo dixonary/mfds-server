@@ -87,7 +87,7 @@ const changeTheme = () => {
   setTheme(newTheme);
 }
 
-setTheme = (t) => {
+const setTheme = (t) => {
   console.log(`New theme is theme ${t}`);
   theme = t;
   const root = $(":root");
