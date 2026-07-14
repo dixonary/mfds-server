@@ -404,6 +404,7 @@ const parseSphereData = (message) => {
     }
 
     // Using a stack, find the final parenthesis
+    // Edit - this is uneccessary lol - forgot theres no inner parentheses
     let parens = 1;
     let finalIndex = -1;
     for (let i = imagePos+2; i < message.length; i++) {
@@ -429,9 +430,6 @@ const parseSphereData = (message) => {
       let currentSphere = [];
       // If not followed by "sphere (" then fail
       if (message[current++] != -52 ) { 
-        return false;
-      }
-      if (message[current++] != -14) {
         return false;
       }
       // Check for 5 positive numbers that make a sphere
@@ -461,9 +459,6 @@ const parseSphereData = (message) => {
       }
       currentSphere.push(message[current]);
       current++;
-      if (message[current++] != -15) {
-        return false;
-      }
       allSpheres.push(currentSphere);
       if (message[current] === -3) {
         current++;
