@@ -1,3 +1,8 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RenderPixelatedPass } from 'three/addons/postprocessing/RenderPixelatedPass.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+
 // Global variables
 
 let $ = (x) => document.querySelector(x);
@@ -111,7 +116,7 @@ const updateLocalCallSign = () => {
   const col = getColor(value);
   elems.forEach(x => { x.style.color = col; });
 
-  confirmBtn = $("#set-call-sign");
+  let confirmBtn = $("#set-call-sign");
   confirmBtn.disabled = unconfirmedCallSign === callSign;
 }
 
@@ -173,7 +178,7 @@ const doTranslation = () => {
     let newText = str
       .map((x, i) => {
         if (x < 0) {
-          entry = dict[x];
+          let entry = dict[x];
           if (entry) {
             let p = "";
             if (i > 0) {
@@ -243,12 +248,64 @@ const renderMessage = (sender, message) => {
   el.appendChild(ael);
   el.appendChild(bel);
 
+  // IMAGE RENDERING
   const sphereData = parseSphereData(message)
   if (sphereData) {
     const cel = document.createElement("button");
     cel.classList.add("imageButton");
-    cel.setAttribute("image-data", sphereData);
     el.appendChild(cel);
+
+    let sceneDiv = null;
+
+    // Listener for clicking image button
+    cel.addEventListener("click", () => {
+      console.log("clicked")
+      // Remove scene if exists
+      if (sceneDiv) {
+        sceneDiv.remove();
+        sceneDiv = null;
+        return;
+      }
+
+      // Else create the scene
+      sceneDiv = document.createElement("div");
+      sceneDiv.classList.add("imageScene");
+      sceneDiv.style.width = "400px";
+      sceneDiv.style.height = "300px";
+      el.appendChild(sceneDiv);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 2000);
+      camera.position.z = 15;
+
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(400, 300);
+      sceneDiv.appendChild(renderer.domElement);
+      const composer = new EffectComposer( renderer );
+      const renderPixelatedPass = new RenderPixelatedPass(4, scene, camera);
+      composer.addPass( renderPixelatedPass );
+
+      const light = new THREE.AmbientLight(0xffffff,1000);
+      scene.add(light);
+
+      sphereData.forEach(([x,z,y,volume,colour]) => {
+        let radius = Math.cbrt(0.75*(volume/Math.PI))
+        const sphere = new THREE.SphereGeometry(radius);
+        const mat = new THREE.MeshStandardMaterial({color: "blue"});
+        const mesh = new THREE.Mesh(sphere, mat);
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+      })
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+        
+      function animate(time) {
+        controls.update();
+        composer.render(scene, camera);
+      }
+      renderer.setAnimationLoop(animate);
+
+    })
   }
 
   $("#all-messages").appendChild(el);
@@ -388,6 +445,7 @@ const parseText = (text) => {
 // RENDERING IMAGES
 
 // Returns the spheredata in a nicer format for rendering
+// TODO - DECIMALS
 const parseSphereData = (message) => {
   try {
     if (!message.includes(-53)) { // If no image signal, doesn't contain an image
@@ -404,7 +462,7 @@ const parseSphereData = (message) => {
     }
 
     // Using a stack, find the final parenthesis
-    // Edit - this is uneccessary lol - forgot theres no inner parentheses
+    // Edit - this is uneccessary lol - forgot theres no inner parentheses, just find next -15
     let parens = 1;
     let finalIndex = -1;
     for (let i = imagePos+2; i < message.length; i++) {
@@ -428,7 +486,7 @@ const parseSphereData = (message) => {
     let allSpheres = []
     while (check) {
       let currentSphere = [];
-      // If not followed by "sphere (" then fail
+      // If not followed by "sphere" then fail
       if (message[current++] != -52 ) { 
         return false;
       }
@@ -470,15 +528,11 @@ const parseSphereData = (message) => {
 
     console.log("ALLSPHERES")
     console.log(allSpheres)
-    return allSpheres;
+    return allSpheres; // Returns a nice 2d array of 5-number sphere data
 
   } catch (error) {
     return false;
   }
-  
-
-
-
 }
 
 //**************************************************//
@@ -499,7 +553,7 @@ window.onload = () => {
   })
 
   socket.addEventListener("message", (ev) => {
-    content = ev.data.split(",");
+    let content = ev.data.split(",");
     console.log("RECEIVED: " + content);
 
     const msgType = content[0];
@@ -661,7 +715,7 @@ window.onload = () => {
       return;
     }
     if (text.length > 0) {
-      result = parseText(text);
+      let result = parseText(text);
       console.log(result);
       if (result) {
         const msg = `M,${result.join(",")}`
