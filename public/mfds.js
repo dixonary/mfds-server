@@ -527,8 +527,10 @@ window.onload = () => {
       console.log(result);
       if (result) {
         const msg = `M,${result.join(",")}`
-        console.log(msg);
+        console.log("Sending: " + msg);
         socket.send(msg);
+        // Clear message
+        $("#message-input").value = "";
       }
     }
   }
