@@ -341,3 +341,13 @@ main {
   white-space: nowrap;
   padding-inline: 0.5em;
 }
+
+.imageButton {
+  background: url(./icons/eye.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 30px;
+  height: 20px;
+  margin-left: 10px;
+}

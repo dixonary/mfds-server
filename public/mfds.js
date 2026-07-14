@@ -285,18 +285,36 @@ const renderMessage = (sender, message) => {
       const renderPixelatedPass = new RenderPixelatedPass(4, scene, camera);
       composer.addPass( renderPixelatedPass );
 
-      const light = new THREE.AmbientLight(0xffffff,1000);
+      const light = new THREE.AmbientLight(0xffffff,2);
       scene.add(light);
 
-      sphereData.forEach(([x,z,y,volume,colour]) => {
+      const bottomGrid = new THREE.GridHelper(25, 4, 0x246E1A, 0x246E1A);
+      bottomGrid.position.y = -7.5;
+      bottomGrid.color
+      const topGrid = new THREE.GridHelper(25, 4, 0x246E1A, 0x246E1A);
+      topGrid.position.y = 7.5;
+      scene.add(bottomGrid);
+      scene.add(topGrid);
+
+      sphereData.forEach(([x,y,z,volume,colour]) => {
         let radius = Math.cbrt(0.75*(volume/Math.PI))
         const sphere = new THREE.SphereGeometry(radius);
-        const mat = new THREE.MeshStandardMaterial({color: "blue"});
+        // map the colour - 0-48 is 0-260
+        let c;
+        if (colour < 48) {
+          // Use hsl
+          let hue = colour/48*280;
+          c = new THREE.Color(`hsl(${hue},100%,50%)`)
+        } else {
+          // use rgb
+          let value = 100 - (64-colour)/16*80
+          console.log("greyscale" + value)
+          c = new THREE.Color(`hsl(0,0%,${value}%)`)
+        }
+        const mat = new THREE.MeshStandardMaterial();
+        mat.color=c;
         const mesh = new THREE.Mesh(sphere, mat);
-        console.log(x)
-        console.log(y)
-        console.log(z)
-        mesh.position.set(x, y, z);
+        mesh.position.set(x, z, y); // Alien coords!
         scene.add(mesh);
       })
 
@@ -448,7 +466,6 @@ const parseText = (text) => {
 // RENDERING IMAGES
 
 // Returns the spheredata in a nicer format for rendering
-// TODO - DECIMALS
 const parseSphereData = (message) => {
   try {
     if (!message.includes(-53)) { // If no image signal, doesn't contain an image
@@ -521,10 +538,6 @@ const parseSphereData = (message) => {
           }
         }
 
-        console.log("HITHERE")
-        console.log(firstHalf)
-        console.log(secondHalf)
-
         // Treat negation and decimals
         if (decimal) {
           currentNumber = parseFloat(`${firstHalf}.${secondHalf}`);
@@ -554,6 +567,10 @@ const parseSphereData = (message) => {
         current++;
         check = true;
       } else {
+        // If not a closing brace, failure
+        if (message[current] != -15) {
+          return false;
+        }
         check = false;
       }
     }
