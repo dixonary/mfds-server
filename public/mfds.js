@@ -175,7 +175,7 @@ const doTranslation = () => {
                 p = `<span class="spacer"> </span>`;
               }
             }
-            const s = `<span class="signal">${entry.value}</span>`;
+            const s = `<span class="signal" title="SIGNAL ${x}">${entry.value}</span>`;
             return `${p}${s}`;
           }
           else {
