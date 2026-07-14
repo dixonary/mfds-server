@@ -11,9 +11,14 @@ let $$ = (x) => Array.from(document.querySelectorAll(x));
 let unconfirmedCallSign = null;
 let callSign = null;
 let activeCallSigns = null;
+let manualCallSign = false;
 
 let dictOrd = [];
 let dict = {};
+
+
+//**************************************************//
+// SOUNDS
 
 const snd_click = new Audio("sounds/click_ping.wav");
 const snd_recv = new Audio("sounds/zap_down_quick.wav");
@@ -21,6 +26,83 @@ const snd_send = new Audio("sounds/zap_digi_up.wav");
 // Only play receiving sounds after a certain time to avoid the history
 // causing a big load to arrive at once
 let receive_sounds_after = new Date();
+
+let muted = false;
+
+const play = (snd) => {
+  if (muted) return;
+  snd.play();
+}
+
+const toggleMute = () => {
+  setMute(!muted);
+}
+
+const setMute = (m) => {
+  muted = m;
+
+  const muteIcon = $("#mute .fa");
+
+  if (!muteIcon) {
+    console.error("Can't find mute icon");
+    return;
+  }
+
+  if (muted) {
+    muteIcon.classList.remove("fa-volume-up")
+    muteIcon.classList.add("fa-volume-off");
+  }
+  else {
+    muteIcon.classList.remove("fa-volume-off");
+    muteIcon.classList.add("fa-volume-up");
+  }
+
+  // To prove the point, this should only actually make a sound on *unmute*
+  play(snd_click);
+
+  localStorage.setItem("mute", m);
+}
+
+const initialiseMute = () => {
+  wasMuted = localStorage.getItem("mute");
+  if (wasMuted === true) {
+    setMute(true);
+  }
+}
+
+//**************************************************//
+// THEME
+
+let theme = 0;
+
+const themeColors = ["#66aa00", "#b6a8e5", "#c49b9b", "#b1d6e9", "#ccc", "#fffb00", "#4f4f85", "#ff9538"];
+
+const changeTheme = () => {
+  let newTheme;
+  if (theme == themeColors.length - 1)
+    newTheme = 0;
+  else
+    newTheme = theme + 1;
+
+  setTheme(newTheme);
+}
+
+setTheme = (t) => {
+  console.log(`New theme is theme ${t}`);
+  theme = t;
+  const root = $(":root");
+  root.style.setProperty("--theme-color", themeColors[theme]);
+  localStorage.setItem("theme", theme);
+}
+
+const initialiseTheme = () => {
+  const ot = localStorage.getItem("theme");
+  const oldTheme = parseInt(ot);
+  if (oldTheme >= 0) {
+    console.log("THEME", ot, oldTheme);
+    setTheme(oldTheme);
+  }
+}
 
 //**************************************************//
 // DICTIONARY
@@ -58,24 +140,28 @@ const updateDict = () => {
 }
 
 const loadDictionary = (text) => {
-  const data = JSON.parse(text);
-  if (!data) {
-    console.error("Could not read dictionary");
-    return;
+  try {
+    const data = JSON.parse(text);
+    dictOrd = data.wordDict.keys.map((x, i) => {
+      return {
+        key: x,
+        value: data.wordDict.values[i]
+      };
+    });
+    descs = Object.fromEntries(data.descDict.keys.map((x, i) =>
+      [x, data.descDict.values[i]]
+    ));
+    dictOrd = dictOrd.map(x => ({ ...x, desc: descs[x.key] }));
+
+    updateDict();
   }
 
-  dictOrd = data.wordDict.keys.map((x, i) => {
-    return {
-      key: x,
-      value: data.wordDict.values[i]
-    };
-  });
-  descs = Object.fromEntries(data.descDict.keys.map((x, i) =>
-    [x, data.descDict.values[i]]
-  ));
-  dictOrd = dictOrd.map(x => ({ ...x, desc: descs[x.key] }));
+  catch (e) {
+    console.error("Could not read dictionary");
 
-  updateDict();
+    renderErrorMessage("Could not read dictionary: " + e.message);
+  }
+
 }
 
 const initialiseDict = () => {
@@ -183,7 +269,7 @@ const doTranslation = () => {
             let p = "";
             if (i > 0) {
               const prev = dict[str[i - 1]];
-              if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0) {
+              if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0 || !prev) {
                 p = `<span class="spacer"> </span>`;
               }
             }
@@ -191,14 +277,19 @@ const doTranslation = () => {
             return `${p}${s}`;
           }
           else {
-            return `<span class="signal undef">@${x}_UNDEF</span>`;
+            // UNDEF is always rendered with a space
+            let p = "";
+            if (i > 0) {
+              p = `<span class="spacer"> </span>`;
+            }
+            return `${p}<span class="signal undef">@${x}_UNDEF</span>`;
           }
         }
         else {
           const prev = dict[str[i - 1]];
           console.log(x, prev?.desc)
           let p = "";
-          if (prev?.desc.formatModeAfter > 0) {
+          if (prev?.desc.formatModeAfter > 0 || !prev) {
             p = `<span class="spacer"> </span>`;
           }
           return `${p}<span class="signal number">${x}</span>`;
@@ -221,6 +312,10 @@ const doTranslation = () => {
         cursor.remove();
         wrapper.replaceWith(...wrapper.childNodes);
         el.innerHTML = newText;
+
+        // Scroll to bottom (again)
+        $(".view").scrollTop = $(".view").scrollHeight;
+
       })
       .start();
 
@@ -403,11 +498,21 @@ const parseText = (text) => {
       continue;
     }
 
+    // Raw signal in the form |-100 or |5
+    if (text[ix] === "|") {
+      const numStr = text.slice(ix + 1).match(/^-?\d+/)?.[0];
+      if (numStr) {
+        const num = parseInt(numStr, 10);
+        signals.push(num);
+        ix += numStr.length + 1;
+        continue;
+      }
+    }
+
     // Try matching a nonnegative integer
     // ... in base 10 :(
     const numStr = text.slice(ix).match(/^\d+/)?.[0];
     if (numStr) {
-      console.log(numStr);
       const num = parseInt(numStr, 10);
       signals.push(num);
       ix += numStr.length;
@@ -616,6 +721,8 @@ window.onload = () => {
         setCallSign(newCallSign);
         localStorage.setItem("call-sign", newCallSign);
 
+        manualCallSign = false;
+
         if (oldCallSign)
           [0, 5].forEach((n) => {
             const btn = $("#set-call-sign");
@@ -637,6 +744,15 @@ window.onload = () => {
         break;
       case 'U':
         // Call sign in use
+
+        if (manualCallSign) {
+          renderErrorMessage(`Call sign ${renderCallSign(unconfirmedCallSign)} in use`);
+        }
+        else {
+          renderErrorMessage(`Call sign ${renderCallSign(unconfirmedCallSign)} in use; randomizing...`);
+          randomizeCallSign();
+          socket.send(`S,${unconfirmedCallSign}`);
+        }
         break;
       case 'C':
         // List of active call signs
@@ -651,7 +767,7 @@ window.onload = () => {
         renderMessage(sender, message);
 
         if (sender !== callSign && Date.now() > receive_sounds_after) {
-          snd_recv.play();
+          play(snd_recv);
         }
 
         break;
@@ -665,7 +781,7 @@ window.onload = () => {
       if (val === 7) newVal = 0;
       else newVal = val + 1;
       setDigitValue(elem.parentNode, newVal);
-      snd_click.play();
+      play(snd_click);
     })
   });
 
@@ -676,11 +792,12 @@ window.onload = () => {
       if (val === 0) newVal = 7;
       else newVal = val - 1;
       setDigitValue(elem.parentNode, newVal);
-      snd_click.play();
+      play(snd_click);
     })
   });
 
   $("#set-call-sign").addEventListener("click", () => {
+    manualCallSign = true;
     socket.send(`S,${unconfirmedCallSign}`);
   })
 
@@ -773,7 +890,7 @@ window.onload = () => {
         // Clear message
         $("#message-input").value = "";
         // Play sound
-        snd_send.play();
+        play(snd_send);
       }
     }
   }
@@ -793,5 +910,17 @@ window.onload = () => {
   if (params.has("read-only")) {
     $("main").classList.add("read-only");
   }
+
+  // Setup muting/unmuting
+  initialiseMute();
+  $("#mute").addEventListener("click", () => {
+    toggleMute();
+  });
+
+  // Setup theme and changing theme
+  initialiseTheme();
+  $("#retheme").addEventListener("click", () => {
+    changeTheme();
+  });
 
 }

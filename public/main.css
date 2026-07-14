@@ -216,10 +216,21 @@ main {
   font-style: italic;
   font-size: 2em;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-inline: 0.25em;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 0.25em 0.5em;
   padding-block: 0.125em;
+
+  & .button-row {
+
+    & a {
+      display: inline-block;
+      cursor: pointer;
+      width: 1em;
+    }
+  }
+
 }
 
 .view {
