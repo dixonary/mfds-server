@@ -293,6 +293,9 @@ const renderMessage = (sender, message) => {
         const sphere = new THREE.SphereGeometry(radius);
         const mat = new THREE.MeshStandardMaterial({color: "blue"});
         const mesh = new THREE.Mesh(sphere, mat);
+        console.log(x)
+        console.log(y)
+        console.log(z)
         mesh.position.set(x, y, z);
         scene.add(mesh);
       })
@@ -483,7 +486,7 @@ const parseSphereData = (message) => {
     // Now we have the start and end of the "image", so we can check everything in between matches the pattern!
     let check = true;
     let current = imagePos+2;
-    let allSpheres = []
+    let allSpheres = [];
     while (check) {
       let currentSphere = [];
       // If not followed by "sphere" then fail
@@ -493,20 +496,49 @@ const parseSphereData = (message) => {
       // Check for 5 positive numbers that make a sphere
       for (let i = 0; i < 4; i++) {
         let negated = false;
+        let decimal = false;
+        let currentNumber;
+        let firstHalf = 0;
+        let secondHalf = 0;
         if (message[current] == -1) { // Consumes negation if present for first 3
           current++;
           negated = true;
         }
-        // Put number into the currentSphere array
-        if (negated) {
-          currentSphere.push(0-message[current]);
-        } else {
-          currentSphere.push(message[current]);
-        }
-        // Check positive and comma next
+        firstHalf = message[current];
+        // Check positive
         if (message[current++] < 0 ) {
           return false;
         }
+        // Check for decimal
+        if (message[current] == -10) { // Consumes decimal point
+          current++;
+          decimal = true;
+
+          secondHalf = message[current];
+          // Check next is positive as it is the next number after a decimal
+          if (message[current++] < 0 ) {
+            return false;
+          }
+        }
+
+        console.log("HITHERE")
+        console.log(firstHalf)
+        console.log(secondHalf)
+
+        // Treat negation and decimals
+        if (decimal) {
+          currentNumber = parseFloat(`${firstHalf}.${secondHalf}`);
+          console.log("floatparsed " + currentNumber);
+        } else {
+          currentNumber = firstHalf;
+        }
+        // Put number into the currentSphere array
+        if (negated) {
+          currentSphere.push(-currentNumber);
+        } else {
+          currentSphere.push(currentNumber);
+        }
+        
         if (message[current++] != -3) {
           return false;
         }
@@ -561,7 +593,7 @@ window.onload = () => {
       case 'K':
         // Call sign OK
         const newCallSign = parseInt(content[1]);
-        oldCallSign = callSign;
+        let oldCallSign = callSign;
         console.log(`New call sign is ${newCallSign}`);
         callSign = newCallSign;
         setCallSign(newCallSign);
