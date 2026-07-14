@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Deep Space</title>
+
+  <link rel="stylesheet" href="reset.css">
+  <link rel="stylesheet" href="main.css">
+
+  <!-- Hack font -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/hack-font@3/build/web/hack-subset.css">
+
+  <!-- FontAwesome icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <!-- TypewriterJS -->
+  <script src="https://unpkg.com/typewriter-effect@latest/dist/core.js"></script>
+
+  <script src="mfds.js"></script>
+</head>
+
+<body>
+  <main>
+    <div class="header">
+      <span>
+        DEEP SPACE<br>
+        COMMUNICATION RELAY
+      </span>
+    </div>
+    <div class="sidebar">
+
+      <div class="dictionary">
+        <label id="dictionary-click-zone" for="dictionary-input">
+          <p>
+            CLICK HERE TO LOAD DICTIONARY FROM FILE<br>
+            OR DRAG ONTO WINDOW
+          </p>
+        </label>
+        <input type="file" id="dictionary-input" />
+      </div>
+      <div class="dict-view">
+        <p class="sidebar-header">WORDS</p>
+        <div class="dict-view-content">
+
+        </div>
+      </div>
+
+      <div class="call-signs">
+        <div id="all-call-signs">
+          <div class="num-call-signs"></div>
+        </div>
+        <div id="call-sign">
+          <div id="call-sign-digits">
+            <div class="digit" id="digit-0" data-value="0">
+              <i class="fa fa-chevron-up digit-up"></i>
+              <p class="value">0</p>
+              <i class="fa fa-chevron-down digit-dn"></i>
+            </div>
+            <div class="digit" id="digit-1" data-value="0">
+              <i class="fa fa-chevron-up digit-up"></i>
+              <p class="value">0</p>
+              <i class="fa fa-chevron-down digit-dn"></i>
+            </div>
+            <div class="digit" id="digit-2" data-value="0">
+              <i class="fa fa-chevron-up digit-up"></i>
+              <p class="value">0</p>
+              <i class="fa fa-chevron-down digit-dn"></i>
+            </div>
+            <div class="digit" id="digit-3" data-value="0">
+              <i class="fa fa-chevron-up digit-up"></i>
+              <p class="value">0</p>
+              <i class="fa fa-chevron-down digit-dn"></i>
+            </div>
+          </div>
+          <button id="set-call-sign">SET CALL SIGN</button>
+        </div>
+      </div>
+    </div>
+    <div class="view">
+      <div id="all-messages"></div>
+    </div>
+    <div class="entry" data-disabled="true">
+      <div class="load-entry">
+        <p>DICTIONARY REQUIRED BEFORE COMMUNICATION CAN BE ENABLED</p>
+      </div>
+      <div class="message-row">
+        <span>&gt;&nbsp;</span>
+        <input id="message-input"></input>
+      </div>
+    </div>
+    <div class="footer">
+      <p class="do-translate" data-original="[-130,0,-86,-119,-237,-38,-85,-2,-2,-241,-193,-86,-119,-237,-38,-29,-85]">
+      </p>
+    </div>
+  </main>
+</body>

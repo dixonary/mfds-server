@@ -1,0 +1,37 @@
+name: mfds-server
+version: 0.1.0
+synopsis: A Chat server for the Message from Deep Space game.
+description: See README at <https://github.com/dixonary/mfds-server>
+maintainer: Alex Dixon <alex@dixonary.co.uk>
+github: dixonary/mfds-server
+category: Game
+
+ghc-options:
+  - -Wall 
+
+language: GHC2024
+
+default-extensions:
+  - BlockArguments
+  - QuasiQuotes
+
+dependencies:
+  - base >= 4.9 && < 5
+  - text
+  - megaparsec
+  - containers
+  - websockets
+  - wai
+  - wai-app-static
+  - warp
+
+library:
+  source-dirs: src
+
+executable:
+  main: Main.hs
+  source-dirs: app
+  dependencies:
+    - mfds-server
+  ghc-options:
+    - -threaded

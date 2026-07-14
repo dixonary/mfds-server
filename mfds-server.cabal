@@ -1,0 +1,67 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           mfds-server
+version:        0.1.0
+synopsis:       A Chat server for the Message from Deep Space game.
+description:    See README at <https://github.com/dixonary/mfds-server>
+category:       Game
+homepage:       https://github.com/dixonary/mfds-server#readme
+bug-reports:    https://github.com/dixonary/mfds-server/issues
+maintainer:     Alex Dixon <alex@dixonary.co.uk>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/dixonary/mfds-server
+
+library
+  exposed-modules:
+      MFDS.Main
+      MFDS.WebApp
+      MFDS.WebsocketsApp
+  other-modules:
+      Paths_mfds_server
+  hs-source-dirs:
+      src
+  default-extensions:
+      BlockArguments
+      QuasiQuotes
+  ghc-options: -Wall
+  build-depends:
+      base >=4.9 && <5
+    , containers
+    , megaparsec
+    , text
+    , wai
+    , wai-app-static
+    , warp
+    , websockets
+  default-language: GHC2024
+
+executable mfds-server
+  main-is: Main.hs
+  other-modules:
+      Paths_mfds_server
+  hs-source-dirs:
+      app
+  default-extensions:
+      BlockArguments
+      QuasiQuotes
+  ghc-options: -Wall -threaded
+  build-depends:
+      base >=4.9 && <5
+    , containers
+    , megaparsec
+    , mfds-server
+    , text
+    , wai
+    , wai-app-static
+    , warp
+    , websockets
+  default-language: GHC2024
