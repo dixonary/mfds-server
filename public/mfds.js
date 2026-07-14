@@ -6,6 +6,7 @@ let $$ = (x) => Array.from(document.querySelectorAll(x));
 let unconfirmedCallSign = null;
 let callSign = null;
 let activeCallSigns = null;
+let manualCallSign = false;
 
 let dictOrd = [];
 let dict = {};
@@ -216,6 +217,10 @@ const doTranslation = () => {
         cursor.remove();
         wrapper.replaceWith(...wrapper.childNodes);
         el.innerHTML = newText;
+
+        // Scroll to bottom (again)
+        $(".view").scrollTop = $(".view").scrollHeight;
+
       })
       .start();
 
@@ -405,6 +410,8 @@ window.onload = () => {
         setCallSign(newCallSign);
         localStorage.setItem("call-sign", newCallSign);
 
+        manualCallSign = false;
+
         if (oldCallSign)
           [0, 5].forEach((n) => {
             const btn = $("#set-call-sign");
@@ -426,6 +433,15 @@ window.onload = () => {
         break;
       case 'U':
         // Call sign in use
+
+        if (manualCallSign) {
+          renderErrorMessage(`Call sign ${unconfirmedCallSign} in use`);
+        }
+        else {
+          renderErrorMessage(`Call sign ${unconfirmedCallSign} in use; randomizing...`);
+          randomizeCallSign();
+          socket.send(`S,${unconfirmedCallSign}`);
+        }
         break;
       case 'C':
         // List of active call signs
@@ -470,6 +486,7 @@ window.onload = () => {
   });
 
   $("#set-call-sign").addEventListener("click", () => {
+    manualCallSign = true;
     socket.send(`S,${unconfirmedCallSign}`);
   })
 
