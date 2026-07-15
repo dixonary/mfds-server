@@ -392,21 +392,11 @@ const renderMessage = (sender, message) => {
       scene.add(bottomGrid);
       scene.add(topGrid);
 
-      sphereData.forEach(([x,y,z,volume,colour]) => {
+      sphereData.forEach(([x,y,z,volume,color]) => {
         let radius = Math.cbrt(0.75*(volume/Math.PI))
         const sphere = new THREE.SphereGeometry(radius);
-        // map the colour - 0-48 is 0-260
-        let c;
-        if (colour < 48) {
-          // Use hsl hue
-          let hue = colour/48*280;
-          c = new THREE.Color(`hsl(${hue},100%,50%)`)
-        } else {
-          // use hsl lightness
-          let value = 100 - (64-colour)/16*80
-          console.log("greyscale" + value)
-          c = new THREE.Color(`hsl(0,0%,${value}%)`)
-        }
+        // map the color - using the key levels apples described to match the game and interpolatee between
+        let c = calculateColor(color);
         const mat = new THREE.MeshStandardMaterial();
         mat.color=c;
         const mesh = new THREE.Mesh(sphere, mat);
@@ -550,8 +540,8 @@ const parseText = (text) => {
   // Must be no invalid signals
   if (invalid.length === 0) {
     // Max length 
-    const maxSignals = 500;
-    if (signals.length <= 500) {
+    const maxSignals = 1500;
+    if (signals.length <= 1500) {
       return signals;
     }
     else {
@@ -693,6 +683,98 @@ const parseSphereData = (message) => {
     return false;
   }
 }
+
+// Helper method for calculating the sphere colors
+// Visual Object colors are evaluated on a gradient [0, 64] to get RGB values. The full gradient linearly blends between keys. In the game, the keys are: 
+// #FF0003 at 0%
+// #F8FF00 at 12.5% (8)
+// #00FF49 at 25% (16)
+// #00BBFF at 37.5% (etc.)
+// #000FFF at 50%
+// #4D00FF at 62.5%
+// #000000 at 80% (51.2)
+// #FFFFFF at 100% (64)
+const calculateColor = (value) => {
+  let c;
+  let percentage;
+
+  if (value <= 8) { // Linearly blend between the first two
+    percentage = (value/8);
+    c = getGradientColor("FF0003", "F8FF00", percentage);
+  } else if (value <= 16) {
+    percentage = ((value-8)/8);
+    c = getGradientColor("F8FF00", "00FF49", percentage);
+  } else if (value <= 24) {
+    percentage = ((value-16)/8);
+    c = getGradientColor("00FF49", "00BBFF", percentage);
+  } else if (value <= 32) {
+    percentage = ((value-24)/8);
+    c = getGradientColor("00BBFF", "000FFF", percentage);
+  } else if (value <= 40) {
+    percentage = ((value-32)/8);
+    c = getGradientColor("000FFF", "4D00FF", percentage);
+  } else if (value <= 51.2) {
+    percentage = ((value-40)/11.2);
+    c = getGradientColor("4D00FF", "000000", percentage);
+  } else if (value <= 64) {
+    percentage = ((value-51.2)/12.8);
+    c = getGradientColor("000000", "FFFFFF", percentage);
+  }
+
+  console.log("COLOUR " + c);
+  return new THREE.Color(Number(c));
+}
+
+// Source - https://stackoverflow.com/a/27709336
+// Posted by rjurado01, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-07-15, License - CC BY-SA 4.0
+const getGradientColor = function(start_color, end_color, percent) {
+
+  // get colors
+  let start_red = parseInt(start_color.substr(0, 2), 16),
+    start_green = parseInt(start_color.substr(2, 2), 16),
+    start_blue = parseInt(start_color.substr(4, 2), 16);
+
+    console.log("red start " + start_red)
+  console.log("blue start " + start_blue)
+  console.log("green start " + start_green)
+
+  let end_red = parseInt(end_color.substr(0, 2), 16),
+    end_green = parseInt(end_color.substr(2, 2), 16),
+    end_blue = parseInt(end_color.substr(4, 2), 16);
+
+    console.log("red end " + end_red)
+  console.log("blue end " + end_blue)
+  console.log("green end " + end_green)
+
+  // calculate new color
+  let diff_red = end_red - start_red;
+  let diff_green = end_green - start_green;
+  let diff_blue = end_blue - start_blue;
+
+  console.log("red diff1 " + diff_red)
+  console.log("blue diff1 " + diff_blue)
+  console.log("green diff1 " + diff_green)
+
+  console.log(percent)
+
+  diff_red = ((diff_red * percent) + start_red).toString(16).split('.')[0];
+  diff_green = ((diff_green * percent) + start_green).toString(16).split('.')[0];
+  diff_blue = ((diff_blue * percent) + start_blue).toString(16).split('.')[0];
+
+  // ensure 2 digits by color
+  if (diff_red.length == 1) diff_red = '0' + diff_red
+  if (diff_green.length == 1) diff_green = '0' + diff_green
+  if (diff_blue.length == 1) diff_blue = '0' + diff_blue
+
+  console.log("red diff " + diff_red)
+  console.log("blue diff " + diff_blue)
+  console.log("green diff " + diff_green)
+  
+
+  return "0x" + diff_red + diff_green + diff_blue;
+};
+
 
 //**************************************************//
 // SETUP
