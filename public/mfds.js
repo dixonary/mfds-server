@@ -371,8 +371,8 @@ const renderMessage = (sender, message) => {
       el.appendChild(sceneDiv);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(60, 400/300, 0.1, 2000);
-      camera.position.x = -16;
+      const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 2000);
+      camera.position.x = -18.5;
       const light = new THREE.DirectionalLight(0xffffff, 10000);
       camera.add(light);
 
@@ -687,41 +687,49 @@ const parseSphereData = (message) => {
 
 // Helper method for calculating the sphere colors
 // Visual Object colors are evaluated on a gradient [0, 64] to get RGB values. The full gradient linearly blends between keys. In the game, the keys are: 
-// #FF0003 at 0%
-// #F8FF00 at 12.5% (8)
-// #00FF49 at 25% (16)
-// #00BBFF at 37.5% (etc.)
-// #000FFF at 50%
-// #4D00FF at 62.5%
-// #d400ff
-// #000000 at 80% (51.2)
-// #FFFFFF at 100% (64)
-// not right yet, wait for apples advice
+// 0 - #FF5800 0-7
+// 1 - #BBFF00 7-14
+// 2 - #00CDFF 14-21
+// 3 - #0084FF 21-28
+// 4 - #4D00FF
+// 5 - #FB39FF
+// 6 - #FF0FD7
+// 7 - #484848
+// 8 - #636363
+// 9 - #FFFFFF
+// Theres still something fishy. 30 should be pink but its blue.
 const calculateColor = (value) => {
   let c;
   let percentage;
+  const spacing = 64/9;
 
-  if (value <= 8) { // Linearly blend between the first two
-    percentage = (value/8);
-    c = getGradientColor("FF0003", "F8FF00", percentage);
-  } else if (value <= 16) {
-    percentage = ((value-8)/8);
-    c = getGradientColor("F8FF00", "00FF49", percentage);
-  } else if (value <= 24) {
-    percentage = ((value-16)/8);
-    c = getGradientColor("00FF49", "00BBFF", percentage);
-  } else if (value <= 32) {
-    percentage = ((value-24)/8);
-    c = getGradientColor("00BBFF", "000FFF", percentage);
-  } else if (value <= 40) {
-    percentage = ((value-32)/8);
-    c = getGradientColor("000FFF", "4D00FF", percentage);
-  } else if (value <= 48) {
-    percentage = ((value-40)/8);
-    c = getGradientColor("4D00FF", "d400ff", percentage);
-  } else if (value <= 64) {
-    percentage = ((value-48)/16);
-    c = getGradientColor("000000", "FFFFFF", percentage);
+  if (value <= spacing) { // Linearly blend between the first two
+    percentage = (value/9);
+    c = getGradientColor("FF5800", "BBFF00", percentage);
+  } else if (value <= spacing*2) {
+    percentage = ((value-spacing)/spacing);
+    c = getGradientColor("BBFF00", "00CDFF", percentage);
+  } else if (value <= spacing*3) {
+    percentage = ((value-spacing*2)/spacing);
+    c = getGradientColor("00CDFF", "0084FF", percentage);
+  } else if (value <= spacing*4) {
+    percentage = ((value-spacing*3)/spacing);
+    c = getGradientColor("0084FF", "4D00FF", percentage);
+  } else if (value <= spacing*5) {
+    percentage = ((value-spacing*4)/spacing);
+    c = getGradientColor("4D00FF", "FB39FF", percentage);
+  } else if (value <= spacing*6) {
+    percentage = ((value-spacing*5)/spacing);
+    c = getGradientColor("FB39FF", "FF0FD7", percentage);
+  } else if (value <= spacing*7) {
+    percentage = ((value-spacing*6)/spacing);
+    c = getGradientColor("FF0FD7", "484848", percentage);
+  } else if (value <= spacing*8) {
+    percentage = ((value-spacing*7)/spacing);
+    c = getGradientColor("484848", "636363", percentage);
+  } else {
+    percentage = ((value-spacing*8)/spacing);
+    c = getGradientColor("636363", "FFFFFF", percentage);
   }
 
   console.log("COLOUR " + c);
