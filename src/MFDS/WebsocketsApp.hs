@@ -156,9 +156,10 @@ runChat state pending = do
 
   renderMsg :: SendMessage -> Text
   renderMsg = \case
-    Msg (Message{author, content}) ->
+    Msg (Message{author, messageNumber, content}) ->
       mconcat . List.intersperse "," $
-        ["R", renderCallSign author] <> (map (Text.pack . show) content)
+        ["R", renderCallSign author, Text.pack $ show messageNumber]
+          <> (map (Text.pack . show) content)
     CallSignOK n -> "K," <> renderCallSign n
     CallSignInUse n -> "U," <> renderCallSign n
     AllClients clients -> "C," <> mconcat (List.intersperse "," $ map renderCallSign clients)
