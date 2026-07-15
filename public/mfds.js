@@ -362,6 +362,8 @@ const renderMessage = (sender, message) => {
       sceneDiv.style.width = "400px";
       sceneDiv.style.height = "300px";
       el.appendChild(sceneDiv);
+      
+      $(".view").scrollTop = $(".view").scrollHeight;
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 2000);
