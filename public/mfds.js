@@ -371,8 +371,10 @@ const renderMessage = (sender, message) => {
       el.appendChild(sceneDiv);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 2000);
-      camera.position.z = 15;
+      const camera = new THREE.PerspectiveCamera(60, 400/300, 0.1, 2000);
+      camera.position.x = -16;
+      const light = new THREE.DirectionalLight(0xffffff, 10000);
+      camera.add(light);
 
       const renderer = new THREE.WebGLRenderer();
       renderer.setSize(400, 300);
@@ -381,20 +383,19 @@ const renderMessage = (sender, message) => {
       const renderPixelatedPass = new RenderPixelatedPass(4, scene, camera);
       composer.addPass( renderPixelatedPass );
 
-      const light = new THREE.AmbientLight(0xffffff,2);
-      scene.add(light);
+      const light2 = new THREE.AmbientLight(0xffffff,2);
+      scene.add(light2);
 
-      const bottomGrid = new THREE.GridHelper(25, 4, 0x246E1A, 0x246E1A);
-      bottomGrid.position.y = -7.5;
+      const bottomGrid = new THREE.GridHelper(30, 4, 0x13831F, 0x246E1A);
+      bottomGrid.position.y = -8;
       bottomGrid.color
-      const topGrid = new THREE.GridHelper(25, 4, 0x246E1A, 0x246E1A);
-      topGrid.position.y = 7.5;
+      const topGrid = new THREE.GridHelper(30, 4, 0x13831F, 0x246E1A);
+      topGrid.position.y = 8;
       scene.add(bottomGrid);
       scene.add(topGrid);
 
-      sphereData.forEach(([x,y,z,volume,color]) => {
-        let radius = Math.cbrt(0.75*(volume/Math.PI))
-        const sphere = new THREE.SphereGeometry(radius);
+      sphereData.forEach(([x,y,z,radius,color]) => {
+        const sphere = new THREE.SphereGeometry(radius/2);
         // map the color - using the key levels apples described to match the game and interpolatee between
         let c = calculateColor(color);
         const mat = new THREE.MeshStandardMaterial();
@@ -541,7 +542,7 @@ const parseText = (text) => {
   if (invalid.length === 0) {
     // Max length 
     const maxSignals = 1500;
-    if (signals.length <= 1500) {
+    if (signals.length <= 1700) {
       return signals;
     }
     else {
@@ -692,8 +693,10 @@ const parseSphereData = (message) => {
 // #00BBFF at 37.5% (etc.)
 // #000FFF at 50%
 // #4D00FF at 62.5%
+// #d400ff
 // #000000 at 80% (51.2)
 // #FFFFFF at 100% (64)
+// not right yet, wait for apples advice
 const calculateColor = (value) => {
   let c;
   let percentage;
@@ -713,11 +716,11 @@ const calculateColor = (value) => {
   } else if (value <= 40) {
     percentage = ((value-32)/8);
     c = getGradientColor("000FFF", "4D00FF", percentage);
-  } else if (value <= 51.2) {
-    percentage = ((value-40)/11.2);
-    c = getGradientColor("4D00FF", "000000", percentage);
+  } else if (value <= 48) {
+    percentage = ((value-40)/8);
+    c = getGradientColor("4D00FF", "d400ff", percentage);
   } else if (value <= 64) {
-    percentage = ((value-51.2)/12.8);
+    percentage = ((value-48)/16);
     c = getGradientColor("000000", "FFFFFF", percentage);
   }
 
@@ -735,28 +738,14 @@ const getGradientColor = function(start_color, end_color, percent) {
     start_green = parseInt(start_color.substr(2, 2), 16),
     start_blue = parseInt(start_color.substr(4, 2), 16);
 
-    console.log("red start " + start_red)
-  console.log("blue start " + start_blue)
-  console.log("green start " + start_green)
-
   let end_red = parseInt(end_color.substr(0, 2), 16),
     end_green = parseInt(end_color.substr(2, 2), 16),
     end_blue = parseInt(end_color.substr(4, 2), 16);
-
-    console.log("red end " + end_red)
-  console.log("blue end " + end_blue)
-  console.log("green end " + end_green)
 
   // calculate new color
   let diff_red = end_red - start_red;
   let diff_green = end_green - start_green;
   let diff_blue = end_blue - start_blue;
-
-  console.log("red diff1 " + diff_red)
-  console.log("blue diff1 " + diff_blue)
-  console.log("green diff1 " + diff_green)
-
-  console.log(percent)
 
   diff_red = ((diff_red * percent) + start_red).toString(16).split('.')[0];
   diff_green = ((diff_green * percent) + start_green).toString(16).split('.')[0];
@@ -770,7 +759,6 @@ const getGradientColor = function(start_color, end_color, percent) {
   console.log("red diff " + diff_red)
   console.log("blue diff " + diff_blue)
   console.log("green diff " + diff_green)
-  
 
   return "0x" + diff_red + diff_green + diff_blue;
 };
