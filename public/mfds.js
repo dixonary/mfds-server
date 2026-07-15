@@ -16,6 +16,7 @@ let manualCallSign = false;
 let dictOrd = [];
 let dict = {};
 
+
 //**************************************************//
 // SOUNDS
 
@@ -110,11 +111,15 @@ const updateDict = () => {
   const dictView = $(".dict-view-content");
   dictView.innerHTML = "";
 
-  const rows = dictOrd.map(({ key, value }) => {
+  dictView.innerHTML = `
+    <table>
+    <tbody>
+    ${dictOrd.map(({ key, value }) => {
     return `<tr><td> ${key}</td><td>${value} </td>`;
-  }).join("");
-
-  dictView.innerHTML = `<table><tbody>${rows}</tbody></table>`;
+  }).join("")}
+    </tbody>
+    </table>
+  `;
 
   // Update stored dict
   localStorage.setItem("dict", JSON.stringify(dictOrd));
@@ -292,6 +297,9 @@ const doTranslation = () => {
         }
       })
       .join("");
+
+    // newText = decodeEntities(newText);
+    console.log(newText);
 
     el.innerHTML = newText;
     const rawText = el.textContent;
@@ -541,7 +549,7 @@ const parseText = (text) => {
 
   // Must be no invalid signals
   if (invalid.length === 0) {
-    // Max length
+    // Max length 
     const maxSignals = 500;
     if (signals.length <= 500) {
       return signals;
@@ -565,33 +573,40 @@ const parseText = (text) => {
 
 // Returns the spheredata in a nicer format for rendering
 const parseSphereData = (message) => {
-  // If the user doesn't know signal 53, they shouldn't see pictures
+  // CHECK IF RENDER IN DICTIONARY
   if (!dict[-53]) {
     return false;
   }
-
   try {
-    const pictureIndices = message.reduce((acc, x, i) => {
-      if (x == -53)
-        acc.push(i);
-      return x;
-    }, []);
-
-    // If there is not exactly one picture, give up
-    if (pictureIndices.length != 1) {
-      return;
+    if (!message.includes(-53)) { // If no image signal, doesn't contain an image
+      return false;
+    }
+    if (message.filter(x => x == -53).length > 1) { // If multiple image signals, invalid
+      return false;
     }
 
-    // Get position of -53 signal. It must be followed by signal -14 (open)
-    const imagePos = pictureIndices[0];
+    // Get position of -53 signal
+    const imagePos = message.indexOf(-53);
     if (message[imagePos + 1] != -14) {
       return false;
     }
 
-    const closePos = message.indexOf(-15, imagePos + 2);
-
-    // If there is no close, give up
-    if (closePos == -1) {
+    // Using a stack, find the final parenthesis
+    // Edit - this is uneccessary lol - forgot theres no inner parentheses, just find next -15. keep cause no reason not to
+    let parens = 1;
+    let finalIndex = -1;
+    for (let i = imagePos + 2; i < message.length; i++) {
+      if (message[i] == -14) {
+        parens += 1;
+      } else if (message[i] == -15) {
+        parens -= 1;
+      }
+      if (parens == 0) {
+        finalIndex = i;
+        break;
+      }
+    }
+    if (finalIndex == -1) { // Mismatched brackets around image
       return false;
     }
 
@@ -605,7 +620,6 @@ const parseSphereData = (message) => {
       if (message[current++] != -52) {
         return false;
       }
-
       // Check for 5 positive numbers that make a sphere
       for (let i = 0; i < 4; i++) {
         let negated = false;
