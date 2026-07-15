@@ -531,8 +531,8 @@ const parseText = (text) => {
   // Must be no invalid signals
   if (invalid.length === 0) {
     // Max length 
-    const maxSignals = 1500;
-    if (signals.length <= 1700) {
+    const maxSignals = 2000;
+    if (signals.length <= 2000) {
       return signals;
     }
     else {
