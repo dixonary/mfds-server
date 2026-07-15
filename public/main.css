@@ -247,12 +247,50 @@ main {
 
   & .message {
     width: 100%;
+    display: flex;
+    align-items: start;
 
     padding: 1ch;
     border-bottom: 1px dashed var(--theme-color);
-    line-height: 1.3;
 
-    text-shadow: 0 0 0.5ch currentColor;
+    & .message-body {
+      line-height: 1.3;
+
+      text-shadow: 0 0 0.5ch currentColor;
+      flex-grow: 1;
+    }
+
+    & .message-aux {
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      gap: 0.5em;
+
+      & .message-sequence {
+        text-align: right;
+        color: var(--theme-color-dark);
+      }
+
+      & .imageButton {
+        background: url(./icons/eye.png);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 30px;
+        height: 20px;
+        margin-left: 10px;
+      }
+
+      & .seeMoreButton {
+        background: url(./icons/see-more.png);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 30px;
+        height: 20px;
+        margin-left: 10px;
+      }
+    }
 
     &.error {
       background-color: rgba(255, 0, 0, 0.1);
@@ -351,14 +389,4 @@ main {
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-inline: 0.5em;
-}
-
-.imageButton {
-  background: url(./icons/eye.png);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 30px;
-  height: 20px;
-  margin-left: 10px;
 }

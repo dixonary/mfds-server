@@ -16,6 +16,8 @@ let manualCallSign = false;
 let dictOrd = [];
 let dict = {};
 
+let typewriters = [];
+
 
 //**************************************************//
 // SOUNDS
@@ -243,6 +245,76 @@ const initialiseCallSign = () => {
 //**************************************************//
 // TRANSLATION
 
+const getTranslation = (str) => {
+
+  let newText = str
+    .map((x, i) => {
+      if (x < 0) {
+        let entry = dict[x];
+        if (entry) {
+          let p = "";
+          if (i > 0) {
+            const prev = dict[str[i - 1]];
+            const wasUndef = (str[i - 1] < 0 && !prev);
+            if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0 || wasUndef) {
+              p = `<span class="spacer"> </span>`;
+            }
+          }
+          const s = `<span class="signal" title="SIGNAL ${x}">${entry.value}</span>`;
+          return `${p}${s}`;
+        }
+        else {
+          // UNDEF is always rendered with a space
+          let p = "";
+          if (i > 0) {
+            p = `<span class="spacer"> </span>`;
+          }
+          return `${p}<span class="signal undef">@${x}_UNDEF</span>`;
+        }
+      }
+      else {
+        const prev = dict[str[i - 1]];
+        const wasUndef = (str[i - 1] < 0 && !prev);
+        let p = "";
+        if (prev?.desc.formatModeAfter > 0 || wasUndef) {
+          p = `<span class="spacer"> </span>`;
+        }
+        return `${p}<span class="signal number">${x}</span>`;
+      }
+    })
+    .join("");
+
+  return newText;
+}
+
+const addTypewriter = (el, fullText, fullHTML) => {
+
+  let n = typewriters.length;
+
+  let t =
+    new Typewriter(el, {
+      delay: 1,
+      loop: false,
+    })
+      .typeString(fullText)
+      .callFunction(({ elements: { cursor, wrapper } }) => {
+        cursor.remove();
+        wrapper.replaceWith(...wrapper.childNodes);
+        el.innerHTML = fullHTML;
+        typewriters[n] = null;
+
+        // Scroll to bottom (again)
+        $(".view").scrollTop = $(".view").scrollHeight;
+
+      })
+      .start();
+
+  typewriters[n] = t;
+
+  el.setAttribute("data-typewriter", n);
+  return n;
+}
+
 const doTranslation = () => {
   const elems = $$(".do-translate");
   elems.forEach((el) => {
@@ -254,76 +326,69 @@ const doTranslation = () => {
     console.log("Found new element")
 
     const original = el.getAttribute("data-original");
+    let str = JSON.parse(original);
 
-    const str = JSON.parse(original);
+    // Truncate
+    if (str.length > 100) {
+      str = str.slice(0, 100);
+      str.push(-25);
+    }
 
-    let newText = str
-      .map((x, i) => {
-        if (x < 0) {
-          let entry = dict[x];
-          if (entry) {
-            let p = "";
-            if (i > 0) {
-              const prev = dict[str[i - 1]];
-              const wasUndef = (str[i - 1] < 0 && !prev);
-              if (entry.desc.formatMode > 0 || prev?.desc.formatModeAfter > 0 || wasUndef) {
-                p = `<span class="spacer"> </span>`;
-              }
-            }
-            const s = `<span class="signal" title="SIGNAL ${x}">${entry.value}</span>`;
-            return `${p}${s}`;
-          }
-          else {
-            // UNDEF is always rendered with a space
-            let p = "";
-            if (i > 0) {
-              p = `<span class="spacer"> </span>`;
-            }
-            return `${p}<span class="signal undef">@${x}_UNDEF</span>`;
-          }
-        }
-        else {
-          const prev = dict[str[i - 1]];
-          const wasUndef = (str[i - 1] < 0 && !prev);
-          let p = "";
-          if (prev?.desc.formatModeAfter > 0 || wasUndef) {
-            p = `<span class="spacer"> </span>`;
-          }
-          return `${p}<span class="signal number">${x}</span>`;
-        }
-      })
-      .join("");
+    const newText = getTranslation(str);
 
     el.innerHTML = newText;
     const rawText = el.textContent;
 
-    new Typewriter(el, {
-      delay: 1,
-      loop: false,
-    })
-      .typeString(rawText)
-      .callFunction(({ elements: { cursor, wrapper } }) => {
-        cursor.remove();
-        wrapper.replaceWith(...wrapper.childNodes);
-        el.innerHTML = newText;
-
-        // Scroll to bottom (again)
-        $(".view").scrollTop = $(".view").scrollHeight;
-
-      })
-      .start();
-
     el.setAttribute("data-status", "done");
+
+    addTypewriter(el, rawText, newText);
+
     return el;
   })
 }
 
-const renderMessage = (sender, message) => {
+const toggleExpandMessage = (el) => {
+
+  const mel = el.querySelector(".message-body.do-translate");
+
+  // Remove the typewriter effect, if it is active
+  const t = mel.getAttribute("data-typewriter");
+  if (t !== undefined && t !== null && typewriters[t]) {
+    typewriters[t].stop();
+    typewriters[t] = null;
+  }
+
+  let str = JSON.parse(mel.getAttribute("data-original"));
+
+  console.log(mel, str);
+
+  const exp = el.getAttribute("data-expanded");
+  if (exp) {
+    // Truncate
+    el.removeAttribute("data-expanded");
+
+    str = str.slice(0, 100);
+    str.push(-25);
+  }
+  else {
+    el.setAttribute("data-expanded", "true");
+  }
+
+  // Instantly set the HTML, and we're done
+  const newText = getTranslation(str);
+  mel.innerHTML = newText;
+
+}
+
+const renderMessage = (sender, sequence, message) => {
 
   const stringMessage = JSON.stringify(message);
 
   const el = document.createElement("div");
   el.classList.add("message");
+
+  const mel = document.createElement("div");
+  mel.classList.add("message-body");
 
   const ael = document.createElement("span");
   ael.classList.add("sender", "call-sign");
@@ -334,15 +399,39 @@ const renderMessage = (sender, message) => {
   bel.classList.add("message-body", "do-translate");
   bel.setAttribute("data-original", stringMessage);
 
-  el.appendChild(ael);
-  el.appendChild(bel);
+  const sel = document.createElement("div");
+  sel.classList.add("message-aux");
+  const seqel = document.createElement("p");
+  seqel.classList.add("message-sequence");
+  seqel.innerText = ("" + sequence).padStart(3, "0");
+
+  const vel = document.createElement("div");
+
+  mel.appendChild(ael);
+  mel.appendChild(bel);
+  el.appendChild(mel);
+
+  el.appendChild(vel);
+
+  sel.appendChild(seqel);
+  if (message.length > 50) {
+    const smel = document.createElement("button");
+    smel.classList.add("seeMoreButton");
+    smel.innerText = '...';
+
+    smel.addEventListener("click", () => toggleExpandMessage(el));
+
+    sel.appendChild(smel);
+  }
+  el.appendChild(sel);
+
 
   // IMAGE RENDERING
   const sphereData = parseSphereData(message)
   if (sphereData) {
     const cel = document.createElement("button");
     cel.classList.add("imageButton");
-    el.appendChild(cel);
+    sel.appendChild(cel);
 
     let sceneDiv = null;
 
@@ -361,7 +450,7 @@ const renderMessage = (sender, message) => {
       sceneDiv.classList.add("imageScene");
       sceneDiv.style.width = "400px";
       sceneDiv.style.height = "300px";
-      el.appendChild(sceneDiv);
+      vel.appendChild(sceneDiv);
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, 400/300, 0.1, 2000);
@@ -821,9 +910,10 @@ window.onload = () => {
       case 'R':
         // Received message
         const sender = parseInt(content[1]);
-        const message = content.slice(2).map(x => parseInt(x, 10));
+        const sequence = parseInt(content[2]);
+        const message = content.slice(3).map(x => parseInt(x, 10));
 
-        renderMessage(sender, message);
+        renderMessage(sender, sequence, message);
 
         if (sender !== callSign && Date.now() > receive_sounds_after) {
           play(snd_recv);
