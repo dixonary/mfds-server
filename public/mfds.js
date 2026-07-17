@@ -812,43 +812,22 @@ const parseSphereData = (message) => {
 // 7 - #484848
 // 8 - #636363
 // 9 - #FFFFFF
-// Theres still something fishy. 30 should be pink but its blue.
+// Code thanks to @elnico56 in discord!!!!
+const COLORS = [
+    "FF5800", "BBFF00",
+    "00CDFF", "0084FF",
+    "4D00FF", "FB39FF",
+    "FF0FD7", "484848",
+    "636363", "FFFFFF"
+];
+
 const calculateColor = (value) => {
-  let c;
-  let percentage;
-  const spacing = 65/9;
-
-  if (value <= spacing) { // Linearly blend between the first two
-    percentage = (value/spacing);
-    c = getGradientColor("FF5800", "BBFF00", percentage);
-  } else if (value <= spacing*2) {
-    percentage = ((value-spacing)/spacing);
-    c = getGradientColor("BBFF00", "00CDFF", percentage);
-  } else if (value <= spacing*3) {
-    percentage = ((value-spacing*2)/spacing);
-    c = getGradientColor("00CDFF", "0084FF", percentage);
-  } else if (value <= spacing*4) {
-    percentage = ((value-spacing*3)/spacing);
-    c = getGradientColor("0084FF", "4D00FF", percentage);
-  } else if (value <= spacing*5) {
-    percentage = ((value-spacing*4)/spacing);
-    c = getGradientColor("4D00FF", "FB39FF", percentage);
-  } else if (value <= spacing*6) {
-    percentage = ((value-spacing*5)/spacing);
-    c = getGradientColor("FB39FF", "FF0FD7", percentage);
-  } else if (value <= spacing*7) {
-    percentage = ((value-spacing*6)/spacing);
-    c = getGradientColor("FF0FD7", "484848", percentage);
-  } else if (value <= spacing*8) {
-    percentage = ((value-spacing*7)/spacing);
-    c = getGradientColor("484848", "636363", percentage);
-  } else {
-    percentage = ((value-spacing*8)/spacing);
-    c = getGradientColor("636363", "FFFFFF", percentage);
-  }
-
-  console.log("COLOUR " + c);
-  return new THREE.Color(Number(c));
+    let n = value / 64 * (COLORS.length - 1);
+    let lo = Math.floor(n);
+    let hi = Math.ceil(n);
+    let c = getGradientColor(COLORS[lo], COLORS[hi], n % 1)
+    console.log("COLOUR " + c);
+    return new THREE.Color(Number(c));
 }
 
 // Source - https://stackoverflow.com/a/27709336
