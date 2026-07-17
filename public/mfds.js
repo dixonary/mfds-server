@@ -816,7 +816,7 @@ const parseSphereData = (message) => {
 const calculateColor = (value) => {
   let c;
   let percentage;
-  const spacing = 65/10;
+  const spacing = 65/9;
 
   if (value <= spacing) { // Linearly blend between the first two
     percentage = (value/spacing);
