@@ -504,7 +504,7 @@ const renderMessage = (sender, sequence, message) => {
             void main()
             {
                 // diffuse 
-                float diffuseStrength = 0.92;
+                float diffuseStrength = 0.93;
                 vec3 norm = normalize(Normal);
                 vec3 lightDir = camDir;
                 float diff = max(dot(norm, lightDir), 0.0);
@@ -816,7 +816,7 @@ const parseSphereData = (message) => {
 const calculateColor = (value) => {
   let c;
   let percentage;
-  const spacing = 64/9;
+  const spacing = 65/10;
 
   if (value <= spacing) { // Linearly blend between the first two
     percentage = (value/spacing);
