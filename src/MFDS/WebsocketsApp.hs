@@ -79,7 +79,9 @@ runChat state pending = do
           getCallSign :: IO Bool
           getCallSign = flip (withMessage conn) myCallSign \case
             SetCallSign cs True -> do
-              writeCallSign cs conn >> pure True
+              forceCallSign cs conn
+              writeMVar myCallSign cs
+              pure True
             SetCallSign cs False -> do
               didSetCallSign <- setCallSign cs myCallSign conn
               if didSetCallSign
@@ -127,8 +129,8 @@ runChat state pending = do
   -- Forcibly write the call sign without regard for what was there before.
   -- This should only be received during a reconnection attempt.
   -- It is likely to cause issues if someone tries to reconnect who was not previously/recently connected.
-  writeCallSign :: CallSign -> WS.Connection -> IO ()
-  writeCallSign callSign conn = modifyMVar_ state $ \s ->
+  forceCallSign :: CallSign -> WS.Connection -> IO ()
+  forceCallSign callSign conn = modifyMVar_ state $ \s ->
     pure
       s
         { clients = Map.insert callSign conn $ clients s
