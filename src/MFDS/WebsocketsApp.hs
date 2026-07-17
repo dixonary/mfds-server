@@ -112,7 +112,6 @@ runChat state pending = do
   withMessage :: WS.Connection -> (RecvMessage -> IO a) -> MVar CallSign -> IO a
   withMessage conn a mcs = do
     m <- fmap parseMsg (WS.receiveData conn)
-    print m
     case m of
       Left err -> do
         putStrLn "======"
