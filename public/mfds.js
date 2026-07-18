@@ -1106,7 +1106,9 @@ const runWebSocket = (isReconnect) => {
 
           if (encryptionKeys.has(k) || encryptionKeys.has(SIGNAL_ENC_SKELETON)) {
             renderMessage(sender, sequence, message, k);
-
+            if (sender !== callSign && Date.now() > receive_sounds_after) {
+              play(snd_recv);
+            }
           }
         }
         else {
