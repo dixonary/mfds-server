@@ -15,6 +15,7 @@ if (window.location.hostname === "localhost") {
 const SIGNAL_ENC = -65535;
 const SIGNAL_ENC_ENABLE = -65534;
 const SIGNAL_ENC_DISABLE = -65533;
+const SIGNAL_ENC_SKELETON = -65536;
 
 // Global variables
 
@@ -1098,7 +1099,7 @@ const runWebSocket = (isReconnect) => {
           const k = message[1];
           message = message.slice(2);
 
-          if (encryptionKeys.has(k) || encryptionKeys.has(0)) {
+          if (encryptionKeys.has(k) || encryptionKeys.has(SIGNAL_ENC_SKELETON)) {
             renderMessage(sender, sequence, message, k);
 
           }
@@ -1270,7 +1271,7 @@ window.onload = () => {
             renderErrorMessage("Encrypted message requires at least 3 signals");
             return;
           }
-          if (!(encryptionKeys.has(result[1]) || encryptionKeys.has(0))) {
+          if (!(encryptionKeys.has(result[1]) || encryptionKeys.has(SIGNAL_ENC_SKELETON))) {
             renderErrorMessage(`Encryption key ${result[1]} is not enabled`);
             return;
           }
