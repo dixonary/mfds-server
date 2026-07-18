@@ -170,12 +170,16 @@ runChat state pending = do
   parseMsg :: Text -> Either String RecvMessage
   parseMsg msg = first errorBundlePretty $ parse p "" msg
    where
-    p, rcs, pcs, pmsg :: Parsec Void Text RecvMessage
-    p = (pcs <|> rcs <|> pmsg) <* eof
-    -- Reconnect message S,1234,0
-    rcs = fmap (\x -> SetCallSign (CallSign x) True) $ "S," *> decimal <* ",0"
-    -- Standard join message S,1234
-    pcs = fmap (\x -> SetCallSign (CallSign x) False) $ "S," *> decimal
+    p, pjoin, pmsg :: Parsec Void Text RecvMessage
+    p = (pjoin <|> pmsg) <* eof
+    pjoin = do
+      digs <- "S," *> (decimal `sepBy` ",")
+      case digs of
+        -- Reconnect
+        [x, 0] -> pure $ SetCallSign (CallSign x) True
+        -- Standard join
+        [x] -> pure $ SetCallSign (CallSign x) False
+        _ -> fail "Invalid join message: expected 1 or 2 signals only"
     pmsg = fmap Say $ "M," *> (signed space decimal `sepBy` ",")
 
   renderMsg :: SendMessage -> Text
