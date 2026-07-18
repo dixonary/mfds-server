@@ -12,10 +12,15 @@ if (window.location.hostname === "localhost") {
   relayEndpoint = `ws://localhost:3101`;
 }
 
+// Scroll down only if at most 100px above the bottom
+const scrollDownThreshold = 100;
+
+// Distinguished Signals
 const SIGNAL_ENC = -65535;
 const SIGNAL_ENC_ENABLE = -65534;
 const SIGNAL_ENC_DISABLE = -65533;
 const SIGNAL_ENC_SKELETON = -65536;
+
 
 // Global variables
 
@@ -45,6 +50,7 @@ let send = (msg) => {
 const snd_click = new Audio("sounds/click_ping.wav");
 const snd_recv = new Audio("sounds/zap_down_quick.wav");
 const snd_send = new Audio("sounds/zap_digi_up.wav");
+
 // Only play receiving sounds after a certain time to avoid the history
 // causing a big load to arrive at once
 let receive_sounds_after = new Date();
@@ -415,8 +421,7 @@ const addTypewriter = (el, fullText, fullHTML) => {
         el.innerHTML = fullHTML;
         typewriters[n] = null;
 
-        // Scroll to bottom (again)
-        $(".view").scrollTop = $(".view").scrollHeight;
+        scrollToBottom();
 
       })
       .start();
@@ -577,7 +582,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
       sceneDiv.style.height = "300px";
       el.appendChild(sceneDiv);
 
-      $(".view").scrollTop = $(".view").scrollHeight;
+      scrollToBottom();
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, 400 / 300, 0.1, 2000);
@@ -672,8 +677,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
 
   $("#all-messages").appendChild(el);
 
-  // Scroll to bottom
-  $(".view").scrollTop = $(".view").scrollHeight;
+  scrollToBottom();
 
 }
 
@@ -692,9 +696,20 @@ const renderErrorMessage = (message, classes = ["error"]) => {
   el.appendChild(bel);
   $("#all-messages").appendChild(el);
 
-  // Scroll to bottom
-  $(".view").scrollTop = $(".view").scrollHeight;
+  scrollToBottom();
 
+}
+
+const scrollToBottom = () => {
+  const viewEl = $(".view");
+
+  console.log(viewEl.scrollHeight, viewEl.clientHeight + viewEl.scrollTop, viewEl.scrollHeight - viewEl.clientHeight - viewEl.scrollTop);
+
+  // If we are near the bottom
+  if (viewEl.scrollHeight - viewEl.clientHeight - viewEl.scrollTop <= scrollDownThreshold) {
+    // Scroll to the bottom
+    viewEl.scrollTop = viewEl.scrollHeight;
+  }
 }
 
 //**************************************************//
