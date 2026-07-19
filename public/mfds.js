@@ -377,7 +377,7 @@ const randomizeCallSign = () => {
 const setActiveCallSigns = (n) => {
   activeCallSigns = n;
   const numCallSigns = $(".num-call-signs");
-  numCallSigns.innerHTML = jdenticon.toSvg("num call signs", 200, { backColor: getBgColor(12345), lightness: { color: [0, 1.0], grayscale: [0, 1.0] } });
+  numCallSigns.innerHTML = jdenticon.toSvg("num call signs", 200, { backColor: getBgColor(12345) });
   $(".num-call-signs").innerHTML += `${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
 }
 
@@ -543,7 +543,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
   const iconEl = document.createElement("div");
   iconEl.classList.add("sender-icon");
 
-  iconEl.innerHTML = jdenticon.toSvg(sender, 200, { backColor: getBgColor(simpleHash("aa" + sender)), lightness: { color: [0, 1.0], grayscale: [0, 1.0] } });
+  iconEl.innerHTML = jdenticon.toSvg(sender, 200, { backColor: getBgColor(simpleHash("aa" + sender)), });
   el.appendChild(iconEl);
 
   const mel = document.createElement("div");
