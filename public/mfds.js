@@ -8,9 +8,9 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 let relayEndpoint = `wss://dscr-relay.dixonary.co.uk`;
 
 // When running locally, use the local server
-if (window.location.hostname === "localhost") {
-  relayEndpoint = `ws://localhost:3101`;
-}
+// if (window.location.hostname === "localhost") {
+//   relayEndpoint = `ws://localhost:3101`;
+// }
 
 // Scroll down only if at most 100px above the bottom
 const scrollDownThreshold = 100;
@@ -206,8 +206,8 @@ const getSenderIcon = (value) => {
   elem.setAttribute("viewBox", `0 0 ${ICON_SIZE} ${ICON_SIZE}`);
 
   const hue = getHue(value);
-  let fgColor = `oklch(from hsl(${hue} 100% 70%) calc(l - 0.3) c h)`;
-  let bgColor = `oklch(from hsl(${hue} 100% 70%) l c h)`;
+  let fgColor = `oklch(from hsl(${hue} 100% 50%) calc(l - 0.4) c h)`;
+  let bgColor = `oklch(from hsl(${hue} 100% 50%) calc(l + 0.4) c h)`;
 
   // Swap fg and bg half the time
   if (value % 2 == 0) {
