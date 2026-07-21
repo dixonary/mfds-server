@@ -691,8 +691,6 @@ const addTypewriter = (el, fullText, fullHTML) => {
 const retranslateAll = () => {
   const elems = $$(".do-translate");
 
-  console.log(elems.length);
-
   elems.forEach((el) => {
     // Remove the typewriter effect, if it is active
     const t = el.getAttribute("data-typewriter");
