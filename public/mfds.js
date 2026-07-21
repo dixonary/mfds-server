@@ -711,7 +711,7 @@ const retranslateAll = () => {
       }
     }
 
-    const newText = getTranslation(str);
+    const newText = getTranslation(str, el.hasAttribute("data-inline"));
     mel.innerHTML = newText;
   });
 }
