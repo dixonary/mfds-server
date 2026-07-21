@@ -1318,7 +1318,20 @@ const runWebSocket = (isReconnect) => {
 
     }
   });
+}
 
+// Use tippy.js to add tooltips
+const addTooltips = () => {
+  const c = (sel, content) => tippy(sel, {
+    content,
+    animateFill: false,
+    hideOnClick: false,
+    duration: 0
+  })
+  c("#go-to-dsve", "Open Deep Space Visual Editor");
+  c("#retheme", "Change Theme");
+  c("#mute", "Mute/unmute");
+  c("#toggle-sidebar", "Toggle sidebar");
 }
 
 window.onload = () => {
@@ -1559,8 +1572,9 @@ window.onload = () => {
   $(".num-call-signs").addEventListener("click", () => {
     toggleSenderIcons();
   });
-}
 
+  addTooltips();
+}
 
 
 
