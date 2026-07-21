@@ -693,17 +693,17 @@ const retranslateAll = () => {
 
   console.log(elems.length);
 
-  elems.forEach((mel) => {
+  elems.forEach((el) => {
     // Remove the typewriter effect, if it is active
-    const t = mel.getAttribute("data-typewriter");
+    const t = el.getAttribute("data-typewriter");
     if (t !== undefined && t !== null && typewriters[t]) {
       typewriters[t].stop();
       typewriters[t] = null;
     }
 
-    let str = JSON.parse(mel.getAttribute("data-original"));
+    let str = JSON.parse(el.getAttribute("data-original"));
 
-    if (!mel.parentNode.parentNode.hasAttribute("data-expanded")) {
+    if (!el.parentNode.parentNode.hasAttribute("data-expanded")) {
       // Truncate
       if (str.length > 100) {
         str = str.slice(0, 100);
@@ -712,7 +712,7 @@ const retranslateAll = () => {
     }
 
     const newText = getTranslation(str, el.hasAttribute("data-inline"));
-    mel.innerHTML = newText;
+    el.innerHTML = newText;
   });
 }
 
