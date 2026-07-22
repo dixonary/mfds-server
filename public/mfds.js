@@ -880,7 +880,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, 400 / 300, 0.1, 2000);
-      camera.position.x = -18.5;
+      camera.position.z = 18.5;
       const renderer = new THREE.WebGLRenderer();
       renderer.logarithmicDepthBuffer = true;
       renderer.setSize(400, 300);
@@ -952,7 +952,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
         });
 
         const mesh = new THREE.Mesh(sphere, mat);
-        mesh.position.set(x, z, y); // Alien coords!
+        mesh.position.set(x, z, -y); // Alien coords!
         scene.add(mesh);
       })
 
