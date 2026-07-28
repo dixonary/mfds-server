@@ -422,10 +422,19 @@ textarea.dict-paste-contents {
 
     }
 
-    & .message-visual {
-      &:has(canvas) {
-        margin-left: 1ch;
-        border: 2px solid var(--theme-color-darker);
+    & .message-visual:has(canvas) {
+      border: 2px solid var(--theme-color-darker);
+
+      &::before {
+        display: block;
+        content: 'VISUAL';
+        color: black;
+        font-style: italic;
+        font-family: 'Telematic', sans-serif;
+        padding-bottom: 0.1ch;
+        letter-spacing: 0.05ch;
+        width: 100%;
+        background-color: var(--theme-color-darker);
       }
     }
 
@@ -618,8 +627,12 @@ textarea.dict-paste-contents {
 
 /* TOOLTIPS */
 
-.tippy-tooltip {
+#tooltip {
+  position-area: bottom;
+  top: 0.5ch;
   background-color: black;
+  padding: 0.25ch;
+  color: white;
   border: 2px solid var(--theme-color-darker);
   border-radius: 0;
 }
@@ -631,7 +644,11 @@ textarea.dict-paste-contents {
 }
 
 & #message-actions {
-  display: flex;
+
+  &:popover-open {
+    display: flex;
+  }
+
   gap: 0.5ch;
   align-items: stretch;
 
@@ -654,6 +671,7 @@ textarea.dict-paste-contents {
     justify-content: center;
     align-items: center;
     gap: 0.5ch;
+    cursor: pointer;
 
     font-size: 1em;
     min-width: 1.5em;

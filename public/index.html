@@ -47,19 +47,19 @@
       </span>
 
       <div class="button-row">
-        <a id="go-to-dsve" href="https://dsve.akqqa.dev" target="_blank">
+        <a id="go-to-dsve" href="https://dsve.akqqa.dev" target="_blank" data-tooltip="Go to Deep Space Visual Editor">
           <img src="/icons/eye.png">
         </a>
-        <a id="retheme">
+        <a id="retheme" data-tooltip="Change theme">
           <i class="fa fa-adjust"></i>
         </a>
-        <a id="mute">
+        <a id="mute" data-tooltip="Mute/unmute">
           <i class="fa fa-volume-up"></i>
         </a>
-        <a id="toggle-expanded-format">
+        <a id="toggle-expanded-format" data-tooltip="Toggle expanded format">
           <i class="fa fa-compress"></i>
         </a>
-        <a id="toggle-sidebar">
+        <a id="toggle-sidebar" data-tooltip="Toggle sidebar">
           <i class="fa fa-bars"></i>
         </a>
       </div>
@@ -143,11 +143,12 @@
       <div id="all-messages"></div>
 
       <div id="message-actions" popover>
-        <button id="toggle-aux-position"><i class="fa fa-angle-double-left"></i></button>
-        <button id="copy-message-signals">
+        <button id="toggle-aux-position" data-tooltip="Toggle metadata position"><i
+            class="fa fa-angle-double-left"></i></button>
+        <button id="copy-message-signals" data-tooltip="Copy message (signals)">
           <i class="fa fa-copy"></i><span>|-123</span>
         </button>
-        <button id="copy-message-render">
+        <button id="copy-message-text" data-tooltip="Copy message (text)">
           <i class="fa fa-copy"></i><span>ABC</span>
         </button>
       </div>
@@ -166,5 +167,7 @@
         data-original="[-130,0,-86,-119,-237,-38,-85,-2,-2,-241,-193,-86,-119,-237,-38,-29,-85]">
       </p>
     </div>
+
+    <div popover="hint" id="tooltip"></div>
   </main>
 </body>

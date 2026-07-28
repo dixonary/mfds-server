@@ -594,10 +594,14 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
   if (message.length > truncateSignals) {
     const seeMoreButton = document.createElement("button");
     seeMoreButton.classList.add("see-more");
+
     seeMoreButton.innerText = '';
     seeMoreButton.addEventListener("click", () => toggleExpandMessage(el));
 
     el.querySelector(".message-aux").appendChild(seeMoreButton);
+
+    seeMoreButton.setAttribute("data-tooltip", "Toggle expand");
+    addTooltip(seeMoreButton);
   }
 
   // IMAGE RENDERING
@@ -708,6 +712,8 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
     const cel = document.createElement("button");
     cel.classList.add("toggle-scene");
     cel.addEventListener("click", toggleScene);
+    cel.setAttribute("data-tooltip", "Toggle VISUAL");
+    addTooltip(cel);
 
     el.querySelector(".message-aux").appendChild(cel);
     scrollToBottom();
@@ -744,6 +750,35 @@ const scrollToBottom = () => {
   if (viewEl.scrollHeight - viewEl.clientHeight - viewEl.scrollTop <= scrollDownThreshold) {
     // Scroll to the bottom
     viewEl.scrollTop = viewEl.scrollHeight;
+  }
+}
+
+const copyMessage = (rawSignals) => {
+  const el = actionMessage.querySelector("[data-original]");
+  if (!el) {
+    console.error("Couldn't find message.");
+    return;
+  }
+  const rawContent = JSON.parse(el.getAttribute("data-original"));
+
+  let content;
+  if (rawSignals) {
+    content = rawContent
+      .map(x => (x >= 0 ? x.toString() : ("|" + x)))
+      .join(" ");
+  }
+  else {
+    const xel = document.createElement("div");
+    xel.innerHTML = getTranslation(rawContent, true);
+    xel.querySelectorAll("br").forEach(br => { br.replaceWith(" "); });
+    content = xel.innerText;
+  }
+
+  try {
+    navigator.clipboard.writeText(content);
+  }
+  catch (error) {
+    console.error(error.message);
   }
 }
 
@@ -1163,24 +1198,22 @@ const runWebSocket = (isReconnect) => {
   });
 }
 
-// Use tippy.js to add tooltips
-const addTooltips = () => {
-  const c = (sel, content) => tippy(sel, {
-    content,
-    animateFill: false,
-    hideOnClick: false,
-    duration: 0,
-    zIndex: 5000,
-    appendTo: () => document.body
+// Add a tooltip handler to an element.
+const addTooltip = (el) => {
+  const content = el.getAttribute("data-tooltip");
+  if (!content) {
+    console.error("Tooltip requested for an element without tooltip data");
+    return;
+  }
+
+  const tooltip = $("#tooltip");
+  el.addEventListener("mouseout", () => {
+    tooltip.hidePopover();
   })
-  c("#go-to-dsve", "Open Deep Space Visual Editor");
-  c("#retheme", "Change Theme");
-  c("#mute", "Mute/unmute");
-  c("#toggle-expanded-format", "Toggle expanded format");
-  c("#toggle-sidebar", "Toggle sidebar");
-  c("#toggle-aux-position", "Toggle metadata position");
-  c("#copy-message-signals", "Copy message (raw signals)");
-  c("#copy-message-text", "Copy message (text)");
+  el.addEventListener("mouseover", () => {
+    tooltip.innerText = content;
+    tooltip.showPopover({ source: el });
+  });
 }
 
 window.onload = () => {
@@ -1384,7 +1417,7 @@ window.onload = () => {
     $("dialog.clipboard-paste").close();
   });
 
-  // Set up configuration buttons
+  // Top-bar buttons
   $("#retheme").addEventListener("click", () => {
     setConfig({ theme: (config.theme + 1) % themeColors.length });
   });
@@ -1409,10 +1442,19 @@ window.onload = () => {
     setConfig({ senderIcons: !config.senderIcons })
   });
 
+  // Message action buttons
   $("#toggle-aux-position").addEventListener("click", () => {
     setConfig({ auxLeft: !config.auxLeft });
   })
 
+  $("#copy-message-signals").addEventListener("click", () => {
+    copyMessage(true);
+  });
+
+  $("#copy-message-text").addEventListener("click", () => {
+    copyMessage(false);
+  });
+
   initialiseConfig();
-  addTooltips();
+  $$("[data-tooltip]").forEach(addTooltip);
 }
