@@ -327,7 +327,7 @@ const setActiveCallSigns = (n) => {
   activeCallSigns = n;
   const numCallSigns = $("#num-call-signs");
   numCallSigns.innerHTML = getSenderIcon(12345);
-  numCallSigns.innerHTML += `${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
+  numCallSigns.innerHTML += `&nbsp;${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
 }
 
 const initialiseCallSign = () => {
@@ -558,9 +558,9 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
   el.classList.add("message");
 
   // Sender icon
-  if (config.senderIcons) {
-    el.innerHTML += `<div class="sender-icon">${getSenderIcon(sender)}</div>`;
-  }
+  el.innerHTML += `<div class="sender-icon">
+    ${getSenderIcon(sender)}
+    </div>`;
 
   // If the message was encrypted, add information about the key used
   let encryptionInfo = encryptionKey === undefined
