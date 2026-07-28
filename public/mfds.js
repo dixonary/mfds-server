@@ -821,7 +821,6 @@ const parseText = (text) => {
     }
 
     // Otherwise match signals
-
     const matches = [];
     Object.entries(dict).forEach(([signal, word]) => {
       if (text.startsWith(word.value, ix)) {
@@ -835,11 +834,11 @@ const parseText = (text) => {
       continue;
     }
 
-    matches.sort((a, b) => a.value.length - b.value.length);
-
     // There cannot be two matches of the same length as they would
     // be the same word.
+    matches.sort((a, b) => a.value.length - b.value.length);
     let longestMatch = matches[matches.length - 1];
+
     // Signals are stored as strings in the dict because object
     // keys are always strings
     signals.push(parseInt(longestMatch.signal, 10));
@@ -872,29 +871,30 @@ const parseText = (text) => {
 // Returns the spheredata in a nicer format for rendering
 const parseSphereData = (message) => {
   // CHECK IF RENDER IN DICTIONARY
-  if (!dict[-53]) {
+  if (!dict[-53])
     return false;
-  }
+
   try {
-    if (!message.includes(-53)) { // If no image signal, doesn't contain an image
+    // If no image signal, doesn't contain an image
+    if (!message.includes(-53))
       return false;
-    }
-    if (message.filter(x => x == -53).length > 1) { // If multiple image signals, invalid
-      return false;
-    }
 
-    // Get position of -53 signal
+    // If multiple image signals, invalid
+    if (message.filter(x => x == -53).length > 1)
+      return false;
+
+    // If image signal is not followed by open signal, invalid
     const imagePos = message.indexOf(-53);
-    if (message[imagePos + 1] != -14) {
+    if (message[imagePos + 1] != -14)
       return false;
-    }
 
+    // If there is no close signal somewhere after the open signal, invalid
     const finalIndex = message.indexOf(-15, imagePos + 2);
-    if (finalIndex == -1) { // Mismatched brackets around image
+    if (finalIndex == -1)
       return false;
-    }
 
-    // Now we have the start and end of the "image", so we can check everything in between matches the pattern!
+    // Now we have the start and end of the "image", so we can check 
+    // everything in between matches the pattern!
     let check = true;
     let current = imagePos + 2;
     let allSpheres = [];
@@ -911,7 +911,8 @@ const parseSphereData = (message) => {
         let currentNumber;
         let firstHalf = 0;
         let secondHalf = 0;
-        if (message[current] == -1) { // Consumes negation if present for first 3
+        // Consume negation if present for first 3
+        if (message[current] == -1) {
           current++;
           negated = true;
         }
@@ -921,15 +922,16 @@ const parseSphereData = (message) => {
           return false;
         }
         // Check for decimal
-        if (message[current] == -10) { // Consumes decimal point
+        if (message[current] == -10) {
+          // Consumes decimal point
           current++;
           decimal = true;
 
           secondHalf = message[current];
           // Check next is positive as it is the next number after a decimal
-          if (message[current++] < 0) {
+          if (message[current++] < 0)
             return false;
-          }
+
         }
 
         // Treat negation and decimals
@@ -939,20 +941,16 @@ const parseSphereData = (message) => {
           currentNumber = firstHalf;
         }
         // Put number into the currentSphere array
-        if (negated) {
-          currentSphere.push(-currentNumber);
-        } else {
-          currentSphere.push(currentNumber);
-        }
+        currentSphere.push(currentNumber * (negated ? -1 : 1));
 
-        if (message[current++] != -3) {
+        if (message[current++] != -3)
           return false;
-        }
+
       }
       // Check final pos number and bracket, also enforce less than 64
-      if (message[current] < 0 || message[current] > 64) {
+      if (message[current] < 0 || message[current] > 64)
         return false;
-      }
+
       currentSphere.push(message[current]);
       current++;
       allSpheres.push(currentSphere);
@@ -972,7 +970,8 @@ const parseSphereData = (message) => {
     console.log(allSpheres)
     return allSpheres; // Returns a nice 2d array of 5-number sphere data
 
-  } catch (error) {
+  }
+  catch (error) {
     return false;
   }
 }
@@ -991,11 +990,8 @@ const parseSphereData = (message) => {
 // 9 - #FFFFFF
 // Code thanks to @elnico56 in discord!!!!
 const COLORS = [
-  "FF5800", "BBFF00",
-  "00CDFF", "0084FF",
-  "4D00FF", "FB39FF",
-  "FF0FD7", "484848",
-  "636363", "FFFFFF"
+  "FF5800", "BBFF00", "00CDFF", "0084FF", "4D00FF",
+  "FB39FF", "FF0FD7", "484848", "636363", "FFFFFF"
 ];
 
 const calculateColor = (value) => {
@@ -1010,31 +1006,27 @@ const calculateColor = (value) => {
 // Source - https://stackoverflow.com/a/27709336
 // Posted by rjurado01, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-07-15, License - CC BY-SA 4.0
-const getGradientColor = function (start_color, end_color, percent) {
+const getGradientColor = function (s_color, e_color, percent) {
+  // Some magic happened and this works. 
+  // I think cause we are omputing it as rbg with 0-1 range?? 
+  // But idk how thats different to hex
+  const gamma = 1 / 1;
 
-    let gammaFactor = 1/1; // Some magic happened and this works. i think cause we are omputing it as rbg with 0-1 range?? but idk how thats different to hex
+  // get colors
+  const s_red = Math.pow(parseInt(s_color.substr(0, 2), 16) / 255, gamma);
+  const s_green = Math.pow(parseInt(s_color.substr(2, 2), 16) / 255, gamma);
+  const s_blue = Math.pow(parseInt(s_color.substr(4, 2), 16) / 255, gamma);
 
-    // get colors
-    let start_red = Math.pow(parseInt(start_color.substr(0, 2), 16)/255, gammaFactor),
-        start_green = Math.pow(parseInt(start_color.substr(2, 2), 16)/255, gammaFactor),
-        start_blue = Math.pow(parseInt(start_color.substr(4, 2), 16)/255, gammaFactor);
+  const e_red = Math.pow(parseInt(e_color.substr(0, 2), 16) / 255, gamma);
+  const e_green = Math.pow(parseInt(e_color.substr(2, 2), 16) / 255, gamma);
+  const e_blue = Math.pow(parseInt(e_color.substr(4, 2), 16) / 255, gamma);
 
-    let end_red = Math.pow(parseInt(end_color.substr(0, 2), 16)/255, gammaFactor),
-        end_green = Math.pow(parseInt(end_color.substr(2, 2), 16)/255, gammaFactor),
-        end_blue = Math.pow(parseInt(end_color.substr(4, 2), 16)/255, gammaFactor);
-
-    
-    // calculate new color
-    let diff_red = end_red - start_red;
-    let diff_green = end_green - start_green;
-    let diff_blue = end_blue - start_blue;
-
-    // Converts each component to 0-1 for rgb
-    diff_red = ((diff_red * percent) + start_red);
-    diff_green = ((diff_green * percent) + start_green);
-    diff_blue = ((diff_blue * percent) + start_blue);
-
-    return { r: diff_red, g: diff_green, b: diff_blue};
+  // Calculate new color and convert each component to 0-1 for rgb
+  return {
+    r: (((e_red - s_red) * percent) + s_red),
+    g: (((e_green - s_green) * percent) + s_green),
+    b: (((e_blue - s_blue) * percent) + s_blue)
+  };
 };
 
 
