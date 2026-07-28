@@ -404,6 +404,7 @@ textarea.dict-paste-contents {
   & .message {
     width: 100%;
     display: flex;
+    gap: 1ch;
     align-items: start;
 
     padding: 1ch;
@@ -433,31 +434,47 @@ textarea.dict-paste-contents {
       display: flex;
       flex-direction: column;
       justify-content: end;
+      align-items: end;
       gap: 0.5em;
 
+      main.aux-left & {
+        order: -1;
+        align-items: start;
+      }
+
       & .message-sequence {
+        background-color: transparent;
+        font-family: 'Hack', 'Courier New', Courier, monospace;
+        border: none;
+        outline: none;
         text-align: right;
+        font-size: 1em;
+
+        main.aux-left & {
+          text-align: left;
+        }
+
         color: var(--theme-color-darker);
+        padding: 0;
+        cursor: pointer;
       }
 
-      & .imageButton {
-        background: url(./icons/eye.png);
+      & button {
+        width: 30px;
+        height: 20px;
+        background-color: transparent;
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        width: 30px;
-        height: 20px;
-        margin-left: 10px;
-      }
+        color: var(--theme-color);
 
-      & .seeMoreButton {
-        background: url(./icons/see-more.png);
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        width: 30px;
-        height: 20px;
-        margin-left: 10px;
+        &.toggle-scene {
+          background-image: url(./icons/eye.png);
+        }
+
+        &.see-more {
+          background-image: url(./icons/see-more.png);
+        }
       }
     }
 
@@ -576,7 +593,6 @@ textarea.dict-paste-contents {
   }
 }
 
-
 .header,
 .sidebar,
 .view,
@@ -614,13 +630,35 @@ textarea.dict-paste-contents {
   white-space: pre-line !important;
 }
 
-/* POPPER */
+& #message-actions {
+  display: flex;
+  gap: 0.5ch;
+  align-items: stretch;
 
-.message-options-popper {
   position: absolute;
+  position-area: left;
+  right: 0.5ch;
+
+  main.aux-left & {
+    position-area: right;
+    left: 0.5ch;
+  }
+
   background-color: black;
-  border: 2px solid var(--theme-color-darker);
+  border: 2px solid var(--theme-color);
   border-radius: 0;
-  z-index: 1000;
   padding: 0.5ch;
+
+  & button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5ch;
+
+    font-size: 1em;
+    min-width: 1.5em;
+    background: transparent;
+    color: var(--theme-color);
+    font-family: 'Hack', 'Courier New', Courier, monospace;
+  }
 }

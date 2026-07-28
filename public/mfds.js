@@ -7,6 +7,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 
 // Max length of a message
 const maxSignals = 2000;
+// Max length after which we truncate messages by default
+const truncateSignals = 100;
 
 let relayEndpoint = `wss://dscr-relay.dixonary.co.uk`;
 
@@ -24,38 +26,62 @@ const SIGNAL_ENC_ENABLE = -65534;
 const SIGNAL_ENC_DISABLE = -65533;
 const SIGNAL_ENC_SKELETON = -65536;
 
+const themeColors = ["#66aa00", "#b6a8e5", "#c49b9b", "#b1d6e9",
+  "#ccc", "#fffb00", "#4f4f85", "#ff9538"];
+
 
 // GLOBAL VARIABLES
 
+// Convenience accessors for on-page elements
 let $ = (x) => document.querySelector(x);
 let $$ = (x) => Array.from(document.querySelectorAll(x));
 
+// Variables related to setting and changing the user's call sign
 let unconfirmedCallSign = null;
 let callSign = null;
 let activeCallSigns = null;
 let manualCallSign = false;
 
+// Currently loaded dictionary in various forms
 let dictOrd = [];
 let dict = {};
 let lastLoadedDict = "";
 
+// List of all active typewriter animations
 let typewriters = [];
+
+// Are we currently trying to reconnect to the server?
 let retrying = false;
 
+// The element that most recently triggered the "message actions" popover
+let actionMessage = null;
+
 // Will be used for the socket send function
-let send = (msg) => {
-  console.warn("Could not send message (socket is not open)");
-}
+let send = (msg) => console.warn("Could not send message (socket is not open)");
+
 
 //**************************************************//
 // CONFIGURATION
 
 const defaultConfig = {
+  // Whether to play any sounds.
   muted: false,
+
+  // Which theme (from themeColors) to use across the page.
   theme: 0,
+
+  // Whether to put newlines when rendering messages, if the dictionary says to.
+  // We default to rendering things inline, but some people like the newlines.
   useExpFormat: false,
+
+  // Whether to show or hide the sidebar.
   sidebar: true,
-  senderIcons: false
+
+  // Whether to show or hide sender icons on messages.
+  senderIcons: false,
+
+  // Positioning the message aux info at the left or right of the message
+  auxLeft: false
 };
 
 // We maintain an object called "config" which stores all
@@ -82,7 +108,6 @@ const setConfig = (newConfig) => {
   efIcon.classList.remove(config.useExpFormat ? "fa-compress" : "fa-expand");
   efIcon.classList.add(config.useExpFormat ? "fa-expand" : "fa-compress");
 
-
   const main = $("main");
 
   // SIDEBAR
@@ -91,7 +116,11 @@ const setConfig = (newConfig) => {
   // SENDER ICONS
   main.classList[config.senderIcons ? "add" : "remove"]("show-sender-icons");
 
-
+  // AUX POSITION
+  main.classList[config.auxLeft ? "add" : "remove"]("aux-left");
+  const swapIcon = $("#toggle-aux-position .fa");
+  swapIcon.classList.remove(config.auxLeft ? "fa-angle-double-left" : "fa-angle-double-right");
+  swapIcon.classList.add(config.auxLeft ? "fa-angle-double-right" : "fa-angle-double-left");
 }
 
 const initialiseConfig = () => {
@@ -99,8 +128,6 @@ const initialiseConfig = () => {
   // Use the default config for anything unspecified
   setConfig({ ...defaultConfig, ...fromLS });
 }
-
-
 
 //**************************************************//
 // SOUNDS
@@ -117,47 +144,6 @@ const play = (snd) => {
   if (config.muted) return;
   snd.play();
 }
-
-const toggleMute = () => {
-  setConfig({ muted: !config.muted });
-
-  // To prove the point, this should only actually make a sound on *unmute*
-  play(snd_click);
-}
-
-
-//**************************************************//
-// THEME
-
-const themeColors = ["#66aa00", "#b6a8e5", "#c49b9b", "#b1d6e9", "#ccc", "#fffb00", "#4f4f85", "#ff9538"];
-
-const changeTheme = () => {
-  setConfig({ theme: (config.theme + 1) % themeColors.length });
-}
-
-//**************************************************//
-// EXPANDED FORMAT
-
-// Whether to put newlines when rendering messages, if the dictionary says to.
-// We default to rendering things inline, but some people like the newlines.
-
-const toggleExpandedFormat = () => {
-  setConfig({ useExpFormat: !config.useExpFormat });
-  // TODO this won't currently get triggered on load
-  retranslateAll();
-}
-
-//**************************************************//
-// SIDEBAR
-
-const toggleSidebar = () => setConfig({ sidebar: !config.sidebar });
-
-
-//**************************************************//
-// SENDER ICONS
-
-const toggleSenderIcons = () => setConfig({ senderIcons: !config.senderIcons });
-
 
 //**************************************************//
 // DICTIONARY
@@ -339,9 +325,9 @@ const randomizeCallSign = () => {
 
 const setActiveCallSigns = (n) => {
   activeCallSigns = n;
-  const numCallSigns = $(".num-call-signs");
+  const numCallSigns = $("#num-call-signs");
   numCallSigns.innerHTML = getSenderIcon(12345);
-  $(".num-call-signs").innerHTML += `${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
+  numCallSigns.innerHTML += `${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
 }
 
 const initialiseCallSign = () => {
@@ -485,8 +471,8 @@ const retranslateAll = () => {
 
     if (!el.parentNode.parentNode.hasAttribute("data-expanded")) {
       // Truncate
-      if (str.length > 100) {
-        str = str.slice(0, 100);
+      if (str.length > truncateSignals) {
+        str = str.slice(0, truncateSignals);
         str.push(-25);
       }
     }
@@ -510,8 +496,8 @@ const doTranslation = () => {
     let str = JSON.parse(original);
 
     // Truncate
-    if (str.length > 100) {
-      str = str.slice(0, 100);
+    if (str.length > truncateSignals) {
+      str = str.slice(0, truncateSignals);
       str.push(-25);
     }
 
@@ -551,7 +537,7 @@ const toggleExpandMessage = (el) => {
     // Truncate
     el.removeAttribute("data-expanded");
 
-    str = str.slice(0, 100);
+    str = str.slice(0, truncateSignals);
     str.push(-25);
   }
   else {
@@ -572,7 +558,9 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
   el.classList.add("message");
 
   // Sender icon
-  el.innerHTML += `<div class="sender-icon">${getSenderIcon(sender)}</div>`;
+  if (config.senderIcons) {
+    el.innerHTML += `<div class="sender-icon">${getSenderIcon(sender)}</div>`;
+  }
 
   // If the message was encrypted, add information about the key used
   let encryptionInfo = encryptionKey === undefined
@@ -582,28 +570,35 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
       ${(dict[encryptionKey]?.value) ?? ("" + encryptionKey)}
     </span>`;
 
-  el.innerHTML += `<div class="message-body">
-    <span class="sender call-sign" style="color:${getColor(sender)}">
-      ${renderCallSign(sender)}
-    </span>
-    ${encryptionInfo}
-    <span class="message-body do-translate" data-original="${stringMessage}">
-    </span>
-  </div>
+  el.innerHTML += [`<div class="message-body">`,
+    `<span class="sender call-sign" style="color:${getColor(sender)}">`,
+    renderCallSign(sender),
+    `</span>`,
+    encryptionInfo,
+    `<span class="message-body do-translate" data-original="${stringMessage}">`,
+    `</span>`,
+    `</div>`].join("");
+
+  el.innerHTML += `
     <div class="message-visual"></div>
     <div class="message-aux">
-      <a class="message-sequence">${("" + sequence).padStart(3, "0")}</a>
+      <button class="message-sequence" popovertarget="message-actions">
+      ${("" + sequence).padStart(3, "0")}
+      </button>
     </div>`;
 
-  if (message.length > 50) {
+  el.querySelector("button.message-sequence").addEventListener("click", () => {
+    actionMessage = el;
+  });
+
+  if (message.length > truncateSignals) {
     const seeMoreButton = document.createElement("button");
     seeMoreButton.classList.add("see-more");
-    seeMoreButton.innerText = '...';
+    seeMoreButton.innerText = '';
     seeMoreButton.addEventListener("click", () => toggleExpandMessage(el));
 
-    el.querySelector("message-aux").appendChild(seeMoreButton);
+    el.querySelector(".message-aux").appendChild(seeMoreButton);
   }
-
 
   // IMAGE RENDERING
   const sphereData = parseSphereData(message)
@@ -711,7 +706,7 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
     };
 
     const cel = document.createElement("button");
-    cel.classList.add("imageButton");
+    cel.classList.add("toggle-scene");
     cel.addEventListener("click", toggleScene);
 
     el.querySelector(".message-aux").appendChild(cel);
@@ -758,8 +753,9 @@ const scrollToBottom = () => {
 const parseText = (text) => {
   // Text parsing. Tricky.
 
-  // Idea: At each parse point (initially 0), take the longest substring matching any word in the dictionary.
-  // If there is none, add the position to an invalid set and move the parse point on 1 to go again.
+  // Idea: At each parse point (initially 0), take the longest substring 
+  // matching any word in the dictionary. If there is none, add the position to 
+  // an invalid set and move the parse point on 1 to go again.
   // If there is one, move to the end of that longest match and go again.
 
   // The problem is that this will fail when one thing is a prefix of
@@ -931,7 +927,6 @@ const parseSphereData = (message) => {
           // Check next is positive as it is the next number after a decimal
           if (message[current++] < 0)
             return false;
-
         }
 
         // Treat negation and decimals
@@ -1174,13 +1169,18 @@ const addTooltips = () => {
     content,
     animateFill: false,
     hideOnClick: false,
-    duration: 0
+    duration: 0,
+    zIndex: 5000,
+    appendTo: () => document.body
   })
   c("#go-to-dsve", "Open Deep Space Visual Editor");
   c("#retheme", "Change Theme");
   c("#mute", "Mute/unmute");
   c("#toggle-expanded-format", "Toggle expanded format");
   c("#toggle-sidebar", "Toggle sidebar");
+  c("#toggle-aux-position", "Toggle metadata position");
+  c("#copy-message-signals", "Copy message (raw signals)");
+  c("#copy-message-text", "Copy message (text)");
 }
 
 window.onload = () => {
@@ -1213,7 +1213,6 @@ window.onload = () => {
     manualCallSign = true;
     send(`S,${unconfirmedCallSign}`);
   })
-
 
   const consumeDictionary = (file) => {
     console.log("Consuming dictionary")
@@ -1261,7 +1260,6 @@ window.onload = () => {
     if (event.ctrlKey || event.altKey || event.metaKey)
       return;
 
-
     const target = event.target;
 
     if (
@@ -1291,7 +1289,6 @@ window.onload = () => {
       console.log(result);
 
       if (result) {
-
         if (result[0] === SIGNAL_ENC_ENABLE) {
           if (result.length === 2) {
             enableEncryptionKey(result[1]);
@@ -1353,15 +1350,14 @@ window.onload = () => {
 
   // Go into read-only mode
   const params = new URLSearchParams(window.location.search);
-  if (params.has("read-only")) {
+  if (params.has("read-only"))
     $("main").classList.add("read-only");
-  }
+
 
   // Setup encryption keys
   initialiseEncryptionKeys();
 
-  // Setup clipboard
-
+  // Set up clipboard
   $("#clipboard-zone").addEventListener("click", () => {
     const clipboardDialog = $("dialog.clipboard-paste");
     const clipboardTextArea = $("textarea.dict-paste-contents");
@@ -1382,24 +1378,41 @@ window.onload = () => {
     }
 
     const res = loadDictionary(content);
-
-    if (res) {
+    if (res)
       $("textarea.dict-paste-contents").value = "";
-    }
 
-
-    const clipboardDialog = $("dialog.clipboard-paste");
-    clipboardDialog.close();
+    $("dialog.clipboard-paste").close();
   });
 
   // Set up configuration buttons
-  $("#retheme").addEventListener("click", changeTheme);
-  $("#mute").addEventListener("click", toggleMute);
-  $("#toggle-expanded-format").addEventListener("click", toggleExpandedFormat);
-  $("#toggle-sidebar").addEventListener("click", toggleSidebar);
-  $(".num-call-signs").addEventListener("click", toggleSenderIcons);
+  $("#retheme").addEventListener("click", () => {
+    setConfig({ theme: (config.theme + 1) % themeColors.length });
+  });
+
+  $("#mute").addEventListener("click", () => {
+    setConfig({ muted: !config.muted });
+    // To prove the point, this should only actually make a sound on *unmute*
+    play(snd_click);
+  });
+
+  $("#toggle-expanded-format").addEventListener("click", () => {
+    setConfig({ useExpFormat: !config.useExpFormat });
+    // Forcibly retranslate all messages into the new format
+    retranslateAll();
+  });
+
+  $("#toggle-sidebar").addEventListener("click", () => {
+    setConfig({ sidebar: !config.sidebar })
+  });
+
+  $("#num-call-signs").addEventListener("click", () => {
+    setConfig({ senderIcons: !config.senderIcons })
+  });
+
+  $("#toggle-aux-position").addEventListener("click", () => {
+    setConfig({ auxLeft: !config.auxLeft });
+  })
 
   initialiseConfig();
-
   addTooltips();
 }

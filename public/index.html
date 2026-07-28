@@ -109,7 +109,7 @@
       </div>
 
       <div class="call-signs">
-        <div class="sidebar-title num-call-signs"></div>
+        <div class="sidebar-title" id="num-call-signs"></div>
         <div id="all-call-signs">
         </div>
         <div id="call-sign">
@@ -141,6 +141,16 @@
     </div>
     <div class="view">
       <div id="all-messages"></div>
+
+      <div id="message-actions" popover>
+        <button id="toggle-aux-position"><i class="fa fa-angle-double-left"></i></button>
+        <button id="copy-message-signals">
+          <i class="fa fa-copy"></i><span>|-123</span>
+        </button>
+        <button id="copy-message-render">
+          <i class="fa fa-copy"></i><span>ABC</span>
+        </button>
+      </div>
     </div>
     <div class="entry" data-disabled="true">
       <div class="load-entry">
