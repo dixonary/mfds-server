@@ -48,6 +48,61 @@ let send = (msg) => {
 }
 
 //**************************************************//
+// CONFIGURATION
+
+const defaultConfig = {
+  muted: false,
+  theme: 0,
+  useExpFormat: false,
+  sidebar: true,
+  senderIcons: false
+};
+
+// We maintain an object called "config" which stores all
+// configuration variables
+let config = defaultConfig;
+
+// When the configuration has been changed, run this to store the updated
+// config in localStorage and apply any relevant changes
+const setConfig = (newConfig) => {
+  config = { ...config, ...newConfig };
+  localStorage.setItem("config", JSON.stringify(config));
+
+  // MUTED
+  const muteIcon = $("#mute .fa");
+  muteIcon.classList.remove(config.muted ? "fa-volume-up" : "fa-volume-off");
+  muteIcon.classList.add(config.muted ? "fa-volume-off" : "fa-volume-up");
+
+  // THEME
+  const root = $(":root");
+  root.style.setProperty("--theme-color", themeColors[config.theme]);
+
+  // EXPANDED FORMAT
+  const efIcon = $("#toggle-expanded-format .fa");
+  efIcon.classList.remove(config.useExpFormat ? "fa-compress" : "fa-expand");
+  efIcon.classList.add(config.useExpFormat ? "fa-expand" : "fa-compress");
+
+
+  const main = $("main");
+
+  // SIDEBAR
+  main.classList[config.sidebar ? "remove" : "add"]("hide-sidebar");
+
+  // SENDER ICONS
+  main.classList[config.senderIcons ? "add" : "remove"]("show-sender-icons");
+
+
+}
+
+const initialiseConfig = () => {
+  const fromLS = JSON.parse(localStorage.getItem("config")) ?? {};
+  // Use the default config for anything unspecified
+  setConfig({ ...defaultConfig, ...fromLS });
+}
+
+
+
+//**************************************************//
 // SOUNDS
 
 const snd_click = new Audio("sounds/click_ping.wav");
@@ -58,81 +113,26 @@ const snd_send = new Audio("sounds/zap_digi_up.wav");
 // causing a big load to arrive at once
 let receive_sounds_after = new Date();
 
-let muted = false;
-
 const play = (snd) => {
-  if (muted) return;
+  if (config.muted) return;
   snd.play();
 }
 
 const toggleMute = () => {
-  setMute(!muted);
-}
-
-const setMute = (m) => {
-  muted = m;
-
-  const muteIcon = $("#mute .fa");
-
-  if (!muteIcon) {
-    console.error("Can't find mute icon");
-    return;
-  }
-
-  if (muted) {
-    muteIcon.classList.remove("fa-volume-up")
-    muteIcon.classList.add("fa-volume-off");
-  }
-  else {
-    muteIcon.classList.remove("fa-volume-off");
-    muteIcon.classList.add("fa-volume-up");
-  }
+  setConfig({ muted: !config.muted });
 
   // To prove the point, this should only actually make a sound on *unmute*
   play(snd_click);
-
-  localStorage.setItem("mute", m);
 }
 
-const initialiseMute = () => {
-  const wasMuted = localStorage.getItem("mute");
-  if (wasMuted === true) {
-    setMute(true);
-  }
-}
 
 //**************************************************//
 // THEME
 
-let theme = 0;
-
 const themeColors = ["#66aa00", "#b6a8e5", "#c49b9b", "#b1d6e9", "#ccc", "#fffb00", "#4f4f85", "#ff9538"];
 
 const changeTheme = () => {
-  let newTheme;
-  if (theme == themeColors.length - 1)
-    newTheme = 0;
-  else
-    newTheme = theme + 1;
-
-  setTheme(newTheme);
-}
-
-const setTheme = (t) => {
-  console.log(`New theme is theme ${t}`);
-  theme = t;
-  const root = $(":root");
-  root.style.setProperty("--theme-color", themeColors[theme]);
-  localStorage.setItem("theme", theme);
-}
-
-const initialiseTheme = () => {
-  const ot = localStorage.getItem("theme");
-  const oldTheme = parseInt(ot);
-  if (oldTheme >= 0) {
-    console.log("THEME", ot, oldTheme);
-    setTheme(oldTheme);
-  }
+  setConfig({ theme: (config.theme + 1) % themeColors.length });
 }
 
 //**************************************************//
@@ -140,238 +140,23 @@ const initialiseTheme = () => {
 
 // Whether to put newlines when rendering messages, if the dictionary says to.
 // We default to rendering things inline, but some people like the newlines.
-let useExpandedFormat = false;
 
 const toggleExpandedFormat = () => {
-  setExpandedFormat(!useExpandedFormat);
-}
-
-const setExpandedFormat = (t) => {
-  console.log(`New expanded format is ${t}`);
-  useExpandedFormat = t;
-
-  if (t) {
-    $("#toggle-expanded-format i").classList.remove("fa-compress");
-    $("#toggle-expanded-format i").classList.add("fa-expand");
-  }
-  else {
-    $("#toggle-expanded-format i").classList.remove("fa-expand");
-    $("#toggle-expanded-format i").classList.add("fa-compress");
-  }
-
-  localStorage.setItem("use-expanded-format", JSON.stringify(useExpandedFormat));
-
+  setConfig({ useExpFormat: !config.useExpFormat });
+  // TODO this won't currently get triggered on load
   retranslateAll();
-}
-
-const initialiseExpandedFormat = () => {
-  const oef = localStorage.getItem("use-expanded-format");
-  const oldEF = JSON.parse(oef);
-  if (oldEF) {
-    console.log("EXPANDED FORMAT", oef, oldEF);
-    setExpandedFormat(oldEF);
-  }
 }
 
 //**************************************************//
 // SIDEBAR
 
-let sidebar_visible = false;
+const toggleSidebar = () => setConfig({ sidebar: !config.sidebar });
 
-const toggleSidebar = () => {
-  sidebar_visible = !sidebar_visible;
-  updateSidebar();
-}
-
-const updateSidebar = () => {
-  const main = $("main");
-
-  if (sidebar_visible) {
-    main.classList.remove("hide-sidebar");
-  }
-  else {
-    main.classList.add("hide-sidebar");
-  }
-
-  localStorage.setItem("sidebar-visible", sidebar_visible);
-}
-
-const initialiseSidebar = () => {
-  const os = JSON.parse(localStorage.getItem("sidebar-visible")) ?? true;
-  sidebar_visible = !!os;
-  console.log(`Sidebar initialised to ${sidebar_visible ? "visible" : "hidden"}`);
-  updateSidebar();
-}
 
 //**************************************************//
 // SENDER ICONS
 
-let show_sender_icons = false;
-
-const toggleSenderIcons = () => {
-  show_sender_icons = !show_sender_icons;
-  updateSenderIcons();
-}
-
-const updateSenderIcons = () => {
-  const main = $("main");
-
-  if (show_sender_icons) {
-    main.classList.add("show-sender-icons");
-  }
-  else {
-    main.classList.remove("show-sender-icons");
-  }
-
-  localStorage.setItem("show-sender-icons", show_sender_icons);
-}
-
-const initialiseSenderIcons = () => {
-  const os = JSON.parse(localStorage.getItem("show-sender-icons"));
-  show_sender_icons = !!os;
-  console.log(`Sender icons initialised to ${show_sender_icons ? "visible" : "hidden"}`);
-  updateSenderIcons();
-}
-
-const getSenderIcon = (value) => {
-  const elem = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "svg"
-  );
-  elem.classList.add("call-sign-icon");
-
-  // Default scale
-  const ICON_SIZE = 100;
-
-  elem.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  elem.setAttribute("viewBox", `0 0 ${ICON_SIZE} ${ICON_SIZE}`);
-
-  const hue = getHue(value);
-  let fgColor = `oklch(from hsl(${hue} 100% 50%) calc(l - 0.4) c h)`;
-  let bgColor = `oklch(from hsl(${hue} 100% 50%) calc(l + 0.4) c h)`;
-
-  // Swap fg and bg half the time
-  if (value % 2 == 0) {
-    const t = fgColor;
-    fgColor = bgColor;
-    bgColor = t;
-  }
-
-  // Get raw points corresponding to one 16th of the shape
-  const drawShape = (style, subpos) => {
-    const size = ICON_SIZE / 4;
-
-    const left = (subpos % 2) * size;
-    const top = Math.floor(subpos / 2) * size;
-    const right = left + size;
-    const bottom = top + size;
-
-    const tl = [left, top];
-    const tr = [right, top];
-    const bl = [left, bottom];
-    const br = [right, bottom];
-
-    switch (style) {
-      case 0: return [tl, tr, br, bl];
-      case 1: return [];
-      case 2: return [tl, br, bl];
-      case 3: return [tr, bl, tl];
-      case 4: return [tl, br, tr];
-      case 5: return [tr, bl, br];
-    }
-  };
-
-  const formats = [0, 1, 2, 3]
-    .map(i => simpleHash("color" + ("" + value)[i]) % 6);
-
-  const quarter = formats
-    .map((format, i) => drawShape(format, i))
-    .filter(points => points.length > 0);
-
-  const transformPoint = ([x, y], tx, ty, rotation, flipX) => {
-    const iq = ICON_SIZE / 4;
-
-    x -= iq;
-    y -= iq;
-    x *= flipX;
-
-    // Rotate around 0,0
-    const angle = rotation * Math.PI / 180;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-
-    const rotatedX = x * cos - y * sin;
-    const rotatedY = x * sin + y * cos;
-
-    // final translate
-    return [
-      rotatedX + tx + iq,
-      rotatedY + ty + iq
-    ];
-  };
-
-  const useArrangementA = (simpleHash("arrangement" + value) % 2 == 0);
-
-  const polygons = [];
-
-  for (let i = 0; i < 4; i++) {
-    const iq = ICON_SIZE / 4;
-    const tx = iq * ((i % 2) * 2);
-    const ty = iq * (Math.floor(i / 2) * 2);
-
-    let flipX;
-    let rotation;
-
-    if (useArrangementA) {
-      rotation = [90, 0, 180, 270][i];
-      flipX = -1;
-    } else {
-      flipX = i === 1 || i === 2 ? -1 : 1;
-      rotation = i > 1 ? 180 : 0;
-    }
-
-    quarter.forEach((poly) => {
-      polygons.push(
-        poly.map(point =>
-          transformPoint(point, tx, ty, rotation, flipX)
-        )
-      );
-    });
-  }
-
-  const pathData = polygons
-    .map(points => {
-      const [[x, y], ...rest] = points;
-
-      return [
-        `M ${x} ${y}`,
-        ...rest.map(([x, y]) => `L ${x} ${y}`),
-        "Z",
-      ].join(" ");
-    })
-    .join(" ");
-
-  elem.innerHTML = `
-  <rect
-    x="0"
-    y="0"
-    width="${ICON_SIZE}"
-    height="${ICON_SIZE}"
-    fill="${bgColor}"
-    stroke="none"
-  />
-
-  <g transform="translate(${ICON_SIZE * 0.1} ${ICON_SIZE * 0.1}) scale(0.8)">
-    <path
-      d="${pathData}"
-      fill="${fgColor}"
-      stroke="none"
-    />
-  </g>
-`;
-
-  return elem.outerHTML;
-}
+const toggleSenderIcons = () => setConfig({ senderIcons: !config.senderIcons });
 
 
 //**************************************************//
@@ -433,7 +218,6 @@ const loadDictionary = (text) => {
     return false;
   }
 }
-
 
 const initialiseDict = () => {
   let dict = localStorage.getItem("dict");
@@ -507,26 +291,24 @@ const initialiseEncryptionKeys = () => {
 //**************************************************//
 // CALL SIGN
 
-const getDigitValue = (elem) => {
-  return parseInt(elem.getAttribute("data-value"));
-}
+const getDigitValue = (elem) => parseInt(elem.getAttribute("data-value"));
+
 const setDigitValue = (elem, v) => {
   elem.setAttribute("data-value", v);
   elem.querySelector(".value").innerText = v;
-
   updateLocalCallSign();
 }
 
-const getHue = (value) => {
-  return (137.5 * value) % 360;
-}
-const getColor = (value) => {
-  return `hsl(${getHue(value)}deg 100% 70%)`;
-}
+const getHue = (value) => (137.5 * value) % 360;
+const getColor = (value) => `hsl(${getHue(value)}deg 100% 70%)`;
+const renderCallSign = (n) => n.toString(8).padStart(4, '0');
 
+// Update the four-digit rendered callsign selector.
 const updateLocalCallSign = () => {
   const elems = $$(".digit .value");
-  const value = elems.map(x => parseInt(x.innerText)).reduce((acc, val) => acc * 8 + val);
+  const value = elems
+    .map(x => parseInt(x.innerText))
+    .reduce((acc, val) => acc * 8 + val);
   unconfirmedCallSign = value;
 
   const col = getColor(value);
@@ -549,6 +331,7 @@ const setCallSign = (cs) => {
   }
 }
 
+// Call signs are anywhere from 0 to 4095 inclusive (0o0000 to 0o7777)
 const randomizeCallSign = () => {
   const n = Math.floor(Math.random() * 8 ** 4);
   setCallSign(n);
@@ -559,10 +342,6 @@ const setActiveCallSigns = (n) => {
   const numCallSigns = $(".num-call-signs");
   numCallSigns.innerHTML = getSenderIcon(12345);
   $(".num-call-signs").innerHTML += `${n} CALL SIGN${n == 1 ? '' : 'S'} ACTIVE`;
-}
-
-const renderCallSign = (n) => {
-  return n.toString(8).padStart(4, '0');
 }
 
 const initialiseCallSign = () => {
@@ -583,7 +362,7 @@ const getTranslation = (str, inline = false) => {
 
   const formatSpace = (formatMode) => {
     // Compress if not in expanded format mode
-    if (formatMode > 1 && (!useExpandedFormat || inline)) formatMode = 1;
+    if (formatMode > 1 && (!config.useExpFormat || inline)) formatMode = 1;
 
     if (formatMode == 1) {
       return `<span class="spacer"> </span>`;
@@ -792,91 +571,45 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
   const el = document.createElement("div");
   el.classList.add("message");
 
-  const iconEl = document.createElement("div");
-  iconEl.classList.add("sender-icon");
+  // Sender icon
+  el.innerHTML += `<div class="sender-icon">${getSenderIcon(sender)}</div>`;
 
-  iconEl.innerHTML = getSenderIcon(sender);
-  el.appendChild(iconEl);
+  // If the message was encrypted, add information about the key used
+  let encryptionInfo = encryptionKey === undefined
+    ? ""
+    : `<span class="encryption-key">
+      <i class="fa fa-key"></i>
+      ${(dict[encryptionKey]?.value) ?? ("" + encryptionKey)}
+    </span>`;
 
-  const mel = document.createElement("div");
-  mel.classList.add("message-body");
-
-  const ael = document.createElement("span");
-  ael.classList.add("sender", "call-sign");
-  ael.innerText = renderCallSign(sender);
-  ael.style.color = getColor(sender);
-
-  const bel = document.createElement("span");
-  bel.classList.add("message-body", "do-translate");
-  bel.setAttribute("data-original", stringMessage);
-
-  const sel = document.createElement("div");
-  sel.classList.add("message-aux");
-  const seqel = document.createElement("a");
-  seqel.classList.add("message-sequence");
-  seqel.innerText = ("" + sequence).padStart(3, "0");
-
-  const vel = document.createElement("div");
-  vel.classList.add("message-visual");
-
-  mel.appendChild(ael)
-
-  // Add info about encrypted message  
-  if (encryptionKey !== undefined) {
-    const kel = document.createElement("span");
-    kel.classList.add("encryption-key");
-
-    let keyName = (dict[encryptionKey]?.value) ?? ("" + encryptionKey);
-
-    kel.innerHTML = `<i class="fa fa-key"></i>${keyName}`;
-    mel.appendChild(kel);
-  }
-
-  mel.appendChild(bel);
-  el.appendChild(mel);
-
-  el.appendChild(vel);
-
-  sel.appendChild(seqel);
+  el.innerHTML += `<div class="message-body">
+    <span class="sender call-sign" style="color:${getColor(sender)}">
+      ${renderCallSign(sender)}
+    </span>
+    ${encryptionInfo}
+    <span class="message-body do-translate" data-original="${stringMessage}">
+    </span>
+  </div>
+    <div class="message-visual"></div>
+    <div class="message-aux">
+      <a class="message-sequence">${("" + sequence).padStart(3, "0")}</a>
+    </div>`;
 
   if (message.length > 50) {
-    const smel = document.createElement("button");
-    smel.classList.add("seeMoreButton");
-    smel.innerText = '...';
+    const seeMoreButton = document.createElement("button");
+    seeMoreButton.classList.add("see-more");
+    seeMoreButton.innerText = '...';
+    seeMoreButton.addEventListener("click", () => toggleExpandMessage(el));
 
-    smel.addEventListener("click", () => toggleExpandMessage(el));
-
-    sel.appendChild(smel);
+    el.querySelector("message-aux").appendChild(seeMoreButton);
   }
-  el.appendChild(sel);
 
 
   // IMAGE RENDERING
   const sphereData = parseSphereData(message)
   if (sphereData) {
-    const cel = document.createElement("button");
-    cel.classList.add("imageButton");
-    sel.appendChild(cel);
 
-    let sceneDiv = null;
-
-    // Listener for clicking image button
-    cel.addEventListener("click", () => {
-      // Remove scene if exists
-      if (sceneDiv) {
-        sceneDiv.remove();
-        sceneDiv = null;
-        return;
-      }
-
-      // Else create the scene
-      sceneDiv = document.createElement("div");
-      sceneDiv.classList.add("imageScene");
-      // sceneDiv.style.width = "400px";
-      // sceneDiv.style.height = "300px";
-      vel.appendChild(sceneDiv);
-
-      scrollToBottom();
+    const buildScene = () => {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, 400 / 300, 0.1, 2000);
@@ -884,7 +617,6 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
       const renderer = new THREE.WebGLRenderer();
       renderer.logarithmicDepthBuffer = true;
       renderer.setSize(400, 300);
-      sceneDiv.appendChild(renderer.domElement);
       const composer = new EffectComposer(renderer);
       const renderPixelatedPass = new RenderPixelatedPass(4, scene, camera);
       composer.addPass(renderPixelatedPass);
@@ -956,8 +688,6 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
         scene.add(mesh);
       })
 
-
-
       const controls = new OrbitControls(camera, renderer.domElement);
 
       function animate(time) {
@@ -966,7 +696,26 @@ const renderMessage = (sender, sequence, message, encryptionKey) => {
       }
       renderer.setAnimationLoop(animate);
 
-    })
+      // Add the renderer to the webpage
+      const sceneDiv = document.createElement("div");
+      sceneDiv.classList.add("image-scene");
+      sceneDiv.appendChild(renderer.domElement);
+      el.querySelector(".message-visual").appendChild(sceneDiv);
+    };
+
+    const toggleScene = () => {
+      const sceneDiv = el.querySelector(".image-scene");
+
+      if (sceneDiv) sceneDiv.remove();
+      else buildScene();
+    };
+
+    const cel = document.createElement("button");
+    cel.classList.add("imageButton");
+    cel.addEventListener("click", toggleScene);
+
+    el.querySelector(".message-aux").appendChild(cel);
+    scrollToBottom();
   }
 
   $("#all-messages").appendChild(el);
@@ -1496,13 +1245,8 @@ window.onload = () => {
     }
     consumeDictionary(files[0].getAsFile());
   }
-  window.addEventListener("dragover", (e) => {
-    e.preventDefault();
-  });
-  window.addEventListener("drop", (e) => {
-    e.preventDefault();
-  });
-
+  window.addEventListener("dragover", (e) => { e.preventDefault(); });
+  window.addEventListener("drop", (e) => { e.preventDefault(); });
   window.addEventListener("drop", dropHandler);
   window.addEventListener("dragover", (e) => {
     const fileItems = [...e.dataTransfer.items].filter(
@@ -1518,9 +1262,7 @@ window.onload = () => {
   initialiseDict();
 
   // Auto-translate anything with the "do-translate" class
-  window.setInterval(() => {
-    doTranslation();
-  }, 100);
+  window.setInterval(doTranslation, 100);
 
   // Move focus back to the input box when typing
   document.addEventListener("keydown", (event) => {
@@ -1623,30 +1365,6 @@ window.onload = () => {
     $("main").classList.add("read-only");
   }
 
-  // Setup muting/unmuting
-  initialiseMute();
-  $("#mute").addEventListener("click", () => {
-    toggleMute();
-  });
-
-  // Setup theme and changing theme
-  initialiseTheme();
-  $("#retheme").addEventListener("click", () => {
-    changeTheme();
-  });
-
-  // Setup expanded format
-  initialiseExpandedFormat();
-  $("#toggle-expanded-format").addEventListener("click", () => {
-    toggleExpandedFormat();
-  })
-
-  // Setup sidebar show/hide
-  initialiseSidebar();
-  $("#toggle-sidebar").addEventListener("click", () => {
-    toggleSidebar();
-  })
-
   // Setup encryption keys
   initialiseEncryptionKeys();
 
@@ -1682,55 +1400,14 @@ window.onload = () => {
     clipboardDialog.close();
   });
 
-  initialiseSenderIcons();
-  $(".num-call-signs").addEventListener("click", () => {
-    toggleSenderIcons();
-  });
+  // Set up configuration buttons
+  $("#retheme").addEventListener("click", changeTheme);
+  $("#mute").addEventListener("click", toggleMute);
+  $("#toggle-expanded-format").addEventListener("click", toggleExpandedFormat);
+  $("#toggle-sidebar").addEventListener("click", toggleSidebar);
+  $(".num-call-signs").addEventListener("click", toggleSenderIcons);
+
+  initialiseConfig();
 
   addTooltips();
-}
-
-
-
-//************************************************//
-// HELPERS
-
-
-// From https://www.jameslmilner.com/posts/converting-rgb-hex-hsl-colors/
-function hslToHex(h, s, l) {
-  h /= 360;
-  s /= 100;
-  l /= 100;
-  let r, g, b;
-  if (s === 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-  const toHex = x => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i); // Shift and combine
-    hash |= 0; // Convert to 32-bit integer
-  }
-  return hash >>> 0; // Ensure the result is unsigned
 }
